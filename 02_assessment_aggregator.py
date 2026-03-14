@@ -1,15 +1,18 @@
 from openpyxl import load_workbook
+import os
 import re
 
 # ==============================
 # VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
+# Input files go in data/   |   Outputs go in outputs/
 # ==============================
-TEMPLATE_FILE = "your_template_FINAL.xlsx" # The output from Script 1
-CAT1_FILE     = "your_cat1_marks.xlsx"
-CAT2_FILE     = "your_cat2_marks.xlsx"
-ASS1_FILE     = "your_ass1_marks.xlsx"
-ASS2_FILE     = "your_ass2_marks.xlsx"
-OUT_FILE      = "CO_ATTAINMENT_FINAL.xlsx"
+# TEMPLATE_FILE: name must match the _FINAL.xlsx produced by Script 1
+TEMPLATE_FILE = os.path.join("data",    "CO ATTAINMENT TEMPLATE (1).xlsx")
+CAT1_FILE     = os.path.join("data",    "Cross platform -CAT 1 (1).xlsx")
+CAT2_FILE     = os.path.join("data",    "Cross platform-CAT 2.xlsx")
+ASS1_FILE     = os.path.join("data",    "Cross platform -Ass 1 (1).xlsx")
+ASS2_FILE     = os.path.join("data",    "Cross platform -Ass 2 (1).xlsx")
+OUT_FILE      = os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx")
 
 # ==============================
 # LOAD TEMPLATE
