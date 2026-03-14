@@ -8,12 +8,19 @@ from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
 # ====================================================
-# VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
+# WINDOWS: point pytesseract at the Tesseract engine
 # ====================================================
-DOCX_FILE = "your_question_paper.docx"  # Replace with your DOCX filename
-DB_FILE = "your_student_db.xlsx"        # Replace with your Student DB filename
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\Vishwajith G S\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
 
-name, ext = os.path.splitext(DOCX_FILE)
+# ====================================================
+# VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
+# Place your input files inside the  data/  folder
+# ====================================================
+DOCX_FILE = "data/CAT QP 1- PH0 (1).docx"          # QP for CAT-1
+DB_FILE   = "data/Cross platform -CAT 1 (1).xlsx"  # Student DB / CAT-1 marks
+
+os.makedirs("outputs", exist_ok=True)
+name = os.path.splitext(os.path.basename(DOCX_FILE))[0]
 
 # ---------------- READ DOCX ----------------
 def read_docx(path):
@@ -150,7 +157,7 @@ def process_docx(path):
 # ====================================================
 print(f"Processing {DOCX_FILE}...")
 result = process_docx(DOCX_FILE)
-output_name = name + "_FINAL.xlsx"
+output_name = os.path.join("outputs", name + "_FINAL.xlsx")
 result.to_excel(output_name, index=False, header=False)
 
 # ====================================================

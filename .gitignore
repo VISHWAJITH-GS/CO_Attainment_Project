@@ -32,3 +32,30 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# OCR temp image
+temp.png
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# VS Code workspace settings
+.vscode/
+
+# Output files (generated — do not commit)
+outputs/*.xlsx
+
+# Input data files (may contain sensitive student data)
+data/*.xlsx
+data/*.docx
+
+# OS junk
+Thumbs.db
+.DS_Store

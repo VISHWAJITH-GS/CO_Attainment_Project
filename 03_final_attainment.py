@@ -1,14 +1,16 @@
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
+import os
 import re
 
 # ==============================
 # VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
+# Input files go in data/   |   Outputs go in outputs/
 # ==============================
-CO_FILE = "CO_ATTAINMENT_FINAL.xlsx" # The output from Script 2
-TERMINAL_FILE = "your_terminal_marks.xlsx"
-OUT_FILE = "CO_ATTAINMENT_SHEET2_FINAL_ABSOLUTE_COMPLETE.xlsx"
+CO_FILE       = os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx")  # Output from Script 2
+TERMINAL_FILE = os.path.join("data",    "TERMINAL.xlsx")
+OUT_FILE      = os.path.join("outputs", "CO_ATTAINMENT_SHEET2_FINAL_ABSOLUTE_COMPLETE.xlsx")
 
 print("✅ Files assigned:")
 print("   CO File        →", CO_FILE)
