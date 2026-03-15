@@ -1,4 +1,4 @@
-import { Home, BookOpen, BarChart3, Settings, ChevronsLeft, ChevronsRight, LogOut, X } from "lucide-react";
+import { Home, BookOpen, BarChart3, Settings, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { SidebarItem } from "./SidebarItem";
@@ -15,13 +15,24 @@ function SidebarContent({ collapsed = false, onClose, onToggleCollapse, desktop 
     <div className="flex h-full flex-col bg-white">
       <div className={cn("group border-b border-red-100 px-4 py-3", collapsed && "px-2")}>
         {collapsed ? (
-          <div className="flex items-center justify-between gap-2">
-            <img src="/tce-logov2.png" alt="TCE ICON" className="h-9 w-auto" />
-            {desktop && (
-              <Button variant="ghost" className="h-8 w-8 p-0" onClick={onToggleCollapse} aria-label="Expand sidebar">
-                <ChevronsRight size={16} />
-              </Button>
-            )}
+          <div className="flex items-center justify-center py-2">
+            <div className="group relative grid h-10 w-10 place-items-center">
+              <img
+                src="/tce-logov2.png"
+                alt="TCE ICON"
+                className="h-9 w-auto transition-opacity duration-200 group-hover:opacity-0 group-focus-within:opacity-0"
+              />
+              {desktop && (
+                <Button
+                  variant="ghost"
+                  className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 bg-transparent p-0 text-slate-700 opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-900 focus-visible:bg-red-50 focus-visible:text-red-900 group-hover:opacity-100 group-focus-within:opacity-100"
+                  onClick={onToggleCollapse}
+                  aria-label="Expand sidebar"
+                >
+                  <ChevronsRight size={16} />
+                </Button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="flex items-center justify-between gap-2">
@@ -57,18 +68,6 @@ function SidebarContent({ collapsed = false, onClose, onToggleCollapse, desktop 
           );
         })}
       </nav>
-
-      <div className="border-t border-red-100 p-3">
-        <Button
-          variant="ghost"
-          className={cn("w-full text-slate-700 hover:text-red-900", collapsed ? "justify-center px-0" : "justify-start gap-2")}
-          title={collapsed ? "Sign out" : undefined}
-          onClick={onClose}
-        >
-          <LogOut size={16} />
-          {!collapsed && "Sign out"}
-        </Button>
-      </div>
     </div>
   );
 }

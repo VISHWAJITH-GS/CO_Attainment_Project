@@ -15,7 +15,7 @@ export function Navbar({ user, onLogout, onMenuClick }) {
           <img src="/tce-banner.png" alt="TCE Logo" className="h-8 w-auto" />
         </div>
 
-        <div className="flex w-full items-center justify-between md:w-auto md:gap-6">
+        <div className="flex w-full items-center justify-between md:gap-6">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
