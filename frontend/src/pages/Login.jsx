@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Mail, Lock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -7,7 +9,50 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import logo from "/tce-logo.png";
 
 function Login() {
-  const prefersReducedMotion = useReducedMotion();
+
+  const navigate = useNavigate();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setError("");
+    setLoading(true);
+
+    // Validate TCE email
+    if (!email.endsWith("@tce.edu")) {
+    setError("Please use your TCE staff email (name@tce.edu)");
+    setLoading(false);
+    return;
+  }
+
+  try {
+
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    console.log("Login Response:", data);
+    } catch (err) {
+    setError("Login failed. Please try again.");
+    } finally {
+    setLoading(false);
+  };
+
+  // Temporary login test
+  console.log("Login Attempt");
+  console.log("Email:", email);
+  console.log("Password:", password);
+
+};
+
+const prefersReducedMotion = useReducedMotion();
 
   const leftPanelVariants = {
     hidden: {
@@ -150,6 +195,8 @@ function Login() {
             id="email"
             type="email"
             placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="border-0 p-0 shadow-none focus-visible:ring-0"
           />
         </div>
@@ -164,10 +211,20 @@ function Login() {
             id="password"
             type="password"
             placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="border-0 p-0 shadow-none focus-visible:ring-0"
           />
         </div>
       </motion.div>
+      {error && (
+        <motion.p
+          variants={itemVariants}
+          className="text-sm text-red-600 text-center"
+        >
+          {error}
+        </motion.p>
+      )}
 
       <motion.div variants={itemVariants}>
         <Button
@@ -177,10 +234,11 @@ function Login() {
           asChild
         >
           <motion.button
+            onClick={handleLogin}
             whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.01 }}
             whileTap={prefersReducedMotion ? undefined : { y: 0, scale: 0.99 }}
           >
-            Sign In
+            {loading ? "Signing In..." : "Sign In"}
           </motion.button>
         </Button>
       </motion.div>
