@@ -1,11 +1,11 @@
-import { Home, BookOpen, BarChart3, Settings, ChevronsLeft, ChevronsRight, X } from "lucide-react";
+import { Home, BarChart3, Settings, UserRound, ChevronsLeft, ChevronsRight, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import { SidebarItem } from "./SidebarItem";
 
 const navItems = [
   { label: "Dashboard", icon: Home, to: "/dashboard" },
-  { label: "My Subjects", icon: BookOpen, to: "/subjects" },
+  { label: "Profile", icon: UserRound, to: "/profile" },
   { label: "Reports", icon: BarChart3, to: "/reports" },
   { label: "Settings", icon: Settings, to: "/settings" },
 ];

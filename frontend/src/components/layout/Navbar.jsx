@@ -4,10 +4,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "../ui/dropdown-menu";
 
-export function Navbar({ user, onLogout, onMenuClick }) {
+export function Navbar({ user, onLogout, onMenuClick, onOpenProfile, onOpenSettings }) {
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-red-100 bg-white">
       <div className="flex h-24 flex-col justify-center px-4 md:h-20 md:flex-row md:items-center md:justify-between md:px-8">
@@ -39,18 +40,22 @@ export function Navbar({ user, onLogout, onMenuClick }) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 md:py-2.5 md:text-base">
+              <button
+                type="button"
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100 md:py-2.5 md:text-base"
+              >
                 <User size={18} />
                 {user?.role || "Staff"}
               </button>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem>Profile</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenProfile}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onOpenSettings}>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600"
-                onClick={onLogout}
+                onSelect={onLogout}
               >
                 Logout
               </DropdownMenuItem>
