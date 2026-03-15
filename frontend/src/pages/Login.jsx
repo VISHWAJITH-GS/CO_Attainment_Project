@@ -181,13 +181,9 @@ const prefersReducedMotion = useReducedMotion();
             id="email"
             type="email"
             placeholder="Enter your email"
-<<<<<<< HEAD
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border-0 p-0 shadow-none focus-visible:ring-0"
-=======
             className="border-0 p-0 text-lg shadow-none focus-visible:ring-0"
->>>>>>> 2b85227f60a3a17a8dc2fda69c9d89284462ec16
           />
         </div>
       </motion.div>
@@ -201,13 +197,9 @@ const prefersReducedMotion = useReducedMotion();
             id="password"
             type="password"
             placeholder="Enter your password"
-<<<<<<< HEAD
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border-0 p-0 shadow-none focus-visible:ring-0"
-=======
             className="border-0 p-0 text-lg shadow-none focus-visible:ring-0"
->>>>>>> 2b85227f60a3a17a8dc2fda69c9d89284462ec16
           />
         </div>
       </motion.div>
