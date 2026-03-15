@@ -130,7 +130,7 @@ const prefersReducedMotion = useReducedMotion();
   variants={formContainerVariants}
   initial="hidden"
   animate="visible"
-  className="w-full max-w-md space-y-6"
+  className="w-full max-w-lg space-y-8"
 >
 
   {/* TCE Accreditation Banner */}
@@ -154,21 +154,7 @@ const prefersReducedMotion = useReducedMotion();
         <motion.img
           src={logo}
           alt="Logo"
-          className="w-16 h-16"
-          animate={
-            prefersReducedMotion
-              ? undefined
-              : { y: [0, -8, 0] }
-          }
-          transition={
-            prefersReducedMotion
-              ? undefined
-              : {
-                  duration: 3,
-                  ease: "easeInOut",
-                  repeat: Infinity,
-                }
-          }
+          className="w-20 h-20 object-contain"
         />
       </motion.div>
 
@@ -184,36 +170,44 @@ const prefersReducedMotion = useReducedMotion();
 
     </CardHeader>
 
-    <CardContent className="space-y-5">
+    <CardContent className="space-y-6">
 
       <motion.div variants={itemVariants} className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-lg">Email</Label>
 
-        <div className="login-input-motion flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
-          <Mail size={18} className="text-gray-400" />
+        <div className="login-input-motion flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-2">
+          <Mail size={22} className="text-gray-400" />
           <Input
             id="email"
             type="email"
             placeholder="Enter your email"
+<<<<<<< HEAD
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="border-0 p-0 shadow-none focus-visible:ring-0"
+=======
+            className="border-0 p-0 text-lg shadow-none focus-visible:ring-0"
+>>>>>>> 2b85227f60a3a17a8dc2fda69c9d89284462ec16
           />
         </div>
       </motion.div>
 
       <motion.div variants={itemVariants} className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password"  className="text-lg">Password</Label>
 
-        <div className="login-input-motion flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
-          <Lock size={18} className="text-gray-400" />
+        <div className="login-input-motion flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-2">
+          <Lock size={22} className="text-gray-400" />
           <Input
             id="password"
             type="password"
             placeholder="Enter your password"
+<<<<<<< HEAD
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="border-0 p-0 shadow-none focus-visible:ring-0"
+=======
+            className="border-0 p-0 text-lg shadow-none focus-visible:ring-0"
+>>>>>>> 2b85227f60a3a17a8dc2fda69c9d89284462ec16
           />
         </div>
       </motion.div>
@@ -229,8 +223,8 @@ const prefersReducedMotion = useReducedMotion();
       <motion.div variants={itemVariants}>
         <Button
           type="button"
-          size="lg"
-          className="login-button-motion w-full"
+          size="xl"
+          className="login-button-motion w-full text-lg"
           asChild
         >
           <motion.button
