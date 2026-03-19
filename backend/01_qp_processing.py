@@ -10,14 +10,16 @@ from openpyxl.utils import get_column_letter
 # ====================================================
 # WINDOWS: point pytesseract at the Tesseract engine
 # ====================================================
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\Vishwajith G S\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
+DEFAULT_TESSERACT = r"C:\Users\Vishwajith G S\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", DEFAULT_TESSERACT)
 
 # ====================================================
 # VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
 # Place your input files inside the  data/  folder
 # ====================================================
-DOCX_FILE = "data/CAT QP 1- PH0 (1).docx"          # QP for CAT-1
-DB_FILE   = "data/Cross platform -CAT 1 (1).xlsx"  # Student DB / CAT-1 marks
+DOCX_FILE = os.getenv("QP_DOCX_FILE", "data/CAT QP 1- PH0 (1).docx")
+DB_FILE = os.getenv("STUDENT_DB_FILE", "data/Cross platform -CAT 1 (1).xlsx")
+OUTPUT_FILE = os.getenv("QP_OUTPUT_FILE")
 
 os.makedirs("outputs", exist_ok=True)
 name = os.path.splitext(os.path.basename(DOCX_FILE))[0]
@@ -152,73 +154,68 @@ def process_docx(path):
 
     return final
 
-# ====================================================
-# RUN QP CONVERSION
-# ====================================================
-print(f"Processing {DOCX_FILE}...")
-result = process_docx(DOCX_FILE)
-output_name = os.path.join("outputs", name + "_FINAL.xlsx")
-result.to_excel(output_name, index=False, header=False)
+def run_pipeline() -> str:
+    print(f"Processing {DOCX_FILE}...")
+    result = process_docx(DOCX_FILE)
 
-# ====================================================
-# STEP 2 – STUDENT DB INTEGRATION  (FIXED MATRIX)
-# ====================================================
-print(f"\nProcessing Student DB: {DB_FILE}...")
-db = pd.read_excel(DB_FILE, header=None)
-regnos, names = [], []
+    output_name = OUTPUT_FILE or os.path.join("outputs", name + "_FINAL.xlsx")
+    result.to_excel(output_name, index=False, header=False)
 
-# -------- READ REGNO & NAME --------
-for i in range(3, len(db)):
-    r = str(db.iloc[i,0]).strip()
-    n = str(db.iloc[i,1]).strip()
-    if r.lower() in ["nan","none",""]: continue
-    if "instruction" in r.lower(): continue
-    regnos.append(r)
-    names.append("" if n.lower()=="nan" else n)
+    print(f"\nProcessing Student DB: {DB_FILE}...")
+    db = pd.read_excel(DB_FILE, header=None)
+    regnos, names = [], []
 
-# -------- READ MARK MATRIX FROM G4 --------
-marks_matrix = []
-for i in range(3, 3 + len(regnos)):
-    row = []
-    for j in range(6, len(db.columns)):
-        v = db.iloc[i, j]
-        row.append("" if pd.isna(v) else v)
-    marks_matrix.append(row)
+    for i in range(3, len(db)):
+        r = str(db.iloc[i, 0]).strip()
+        n = str(db.iloc[i, 1]).strip()
+        if r.lower() in ["nan", "none", ""]:
+            continue
+        if "instruction" in r.lower():
+            continue
+        regnos.append(r)
+        names.append("" if n.lower() == "nan" else n)
 
-# ====================================================
-# WRITE TO OUR QP EXCEL
-# ====================================================
-wb = load_workbook(output_name)
-ws = wb.active
+    marks_matrix = []
+    for i in range(3, 3 + len(regnos)):
+        row = []
+        for j in range(6, len(db.columns)):
+            v = db.iloc[i, j]
+            row.append("" if pd.isna(v) else v)
+        marks_matrix.append(row)
 
-ws["A10"]="S.No"
-ws["B10"]="REGNO"
-ws["C10"]="Student NAME"
+    wb = load_workbook(output_name)
+    ws = wb.active
 
-for cell in ["A11","A12","B11","B12","C11","C12"]:
-    ws[cell]=""
+    ws["A10"] = "S.No"
+    ws["B10"] = "REGNO"
+    ws["C10"] = "Student NAME"
 
-start = 13
+    for cell in ["A11", "A12", "B11", "B12", "C11", "C12"]:
+        ws[cell] = ""
 
-# ----- STUDENT INFO -----
-for i in range(len(regnos)):
-    ws[f"A{start+i}"]=i+1
-    ws[f"B{start+i}"]=regnos[i]
-    ws[f"C{start+i}"]=names[i]
+    start = 13
 
-# ----- FULL MARK MATRIX -----
-for i in range(len(marks_matrix)):
-    for j in range(len(marks_matrix[i])):
-        ws.cell(row=start+i, column=4+j).value = marks_matrix[i][j]
+    for i in range(len(regnos)):
+        ws[f"A{start+i}"] = i + 1
+        ws[f"B{start+i}"] = regnos[i]
+        ws[f"C{start+i}"] = names[i]
 
-# ---- AUTO WIDTH ----
-for col in ws.columns:
-    max_len=0
-    col_letter=get_column_letter(col[0].column)
-    for cell in col:
-        if cell.value:
-            max_len=max(max_len,len(str(cell.value)))
-    ws.column_dimensions[col_letter].width=max_len+4
+    for i in range(len(marks_matrix)):
+        for j in range(len(marks_matrix[i])):
+            ws.cell(row=start + i, column=4 + j).value = marks_matrix[i][j]
 
-wb.save(output_name)
-print(f"✅ FULL MATRIX COPIED SUCCESSFULLY → {output_name}")
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        for cell in col:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max_len + 4
+
+    wb.save(output_name)
+    print(f"FULL MATRIX COPIED SUCCESSFULLY -> {output_name}")
+    return output_name
+
+
+if __name__ == "__main__":
+    run_pipeline()

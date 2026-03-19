@@ -2,7 +2,8 @@ import { useParams } from "react-router-dom";
 import FileUploadSection from "../components/layout/FileUploadSection";
 import ParameterSection from "../components/layout/ParameterSection";
 import ReportSection from "../components/layout/ReportSection";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getSubjects, getWorkspaceProgress, saveWorkspaceProgress } from "../lib/api";
 
 const subjectCatalog = {
   CS301: { name: "Database Management Systems", semester: "Semester V" },
@@ -13,19 +14,78 @@ const subjectCatalog = {
   IT407: { name: "Cloud Computing", semester: "Semester VII" },
 };
 
-export default function SubjectWorkspace() {
+export default function SubjectWorkspace({ user }) {
   const [uploadedFiles, setUploadedFiles] = useState({});
+  const [parameters, setParameters] = useState({});
   const [step, setStep] = useState(1);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [subjects, setSubjects] = useState([]);
   const [openSections, setOpenSections] = useState({
     upload: true,
     parameter: false,
   });
   const { subjectCode } = useParams();
   const resolvedSubjectCode = subjectCode || "SUBJECT";
-  const details = subjectCatalog[subjectCode] || {
+  const details =
+    subjects.find((subject) => subject.code === resolvedSubjectCode) ||
+    subjectCatalog[subjectCode] || {
     name: "Subject Name",
     semester: "Semester",
   };
+
+  useEffect(() => {
+    async function loadSubjects() {
+      try {
+        const data = await getSubjects();
+        setSubjects(data || []);
+      } catch {
+        setSubjects([]);
+      }
+    }
+
+    loadSubjects();
+  }, []);
+
+  useEffect(() => {
+    async function loadSavedProgress() {
+      if (!user?.email || !subjectCode) {
+        return;
+      }
+
+      try {
+        const data = await getWorkspaceProgress(subjectCode, user.email);
+        setUploadedFiles(data.uploadedFiles || {});
+        setParameters(data.parameters || {});
+        setStep(data.step || 1);
+        setOpenSections({
+          upload: (data.step || 1) <= 1,
+          parameter: (data.step || 1) === 2,
+        });
+      } catch {
+        setSaveMessage("Unable to load saved progress.");
+      }
+    }
+
+    loadSavedProgress();
+  }, [subjectCode, user?.email]);
+
+  async function persistProgress(nextUploadedFiles, nextParameters, nextStep) {
+    if (!user?.email || !subjectCode) {
+      return;
+    }
+
+    try {
+      await saveWorkspaceProgress(subjectCode, {
+        email: user.email,
+        uploadedFiles: nextUploadedFiles,
+        parameters: nextParameters,
+        step: nextStep,
+      });
+      setSaveMessage("Progress saved.");
+    } catch (error) {
+      setSaveMessage(error.message || "Failed to save progress.");
+    }
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -81,16 +141,21 @@ export default function SubjectWorkspace() {
       <FileUploadSection
         isOpen={openSections.upload}
         completed={step > 1}
+        uploadedFiles={uploadedFiles}
+        user={user}
+        subjectCode={resolvedSubjectCode}
         onToggle={() =>
           setOpenSections((prev) => ({
             ...prev,
             upload: !prev.upload,
           }))
         }
-        onUploadChange={(files) => {
+        onUploadChange={(files, backendStep) => {
           setUploadedFiles(files);
+          let nextStep = backendStep || step;
 
           if (Object.keys(files).length === 7) {
+            nextStep = 2;
             setStep(2);
             setOpenSections((prev) => ({
               ...prev,
@@ -98,33 +163,57 @@ export default function SubjectWorkspace() {
               parameter: true,
             }));
           }
+
+          if (nextStep === 4) {
+            setStep(4);
+            setOpenSections((prev) => ({
+              ...prev,
+              upload: false,
+              parameter: false,
+            }));
+            return;
+          }
+
+          persistProgress(files, parameters, nextStep);
         }}
       />
 
       <ParameterSection
         isOpen={openSections.parameter}
         completed={step > 2}
+        initialValues={parameters}
         onToggle={() =>
           setOpenSections((prev) => ({
             ...prev,
             parameter: !prev.parameter,
           }))
         }
-        onComplete={() => {
+        onComplete={(values) => {
+          setParameters(values);
           setStep(3);
           setOpenSections((prev) => ({
             ...prev,
             parameter: false,
           }));
+          persistProgress(uploadedFiles, values, 3);
         }}
       />
 
       <ReportSection
         completed={step > 3}
+        user={user}
+        subjectCode={resolvedSubjectCode}
+        subjectName={details.name}
+        semester={details.semester}
         uploadedFiles={uploadedFiles}
         parametersCompleted={step >= 3}
-        onGenerated={() => setStep(4)}
+        onGenerated={() => {
+          setStep(4);
+          persistProgress(uploadedFiles, parameters, 4);
+        }}
       />
+
+      {saveMessage ? <p className="text-xs text-slate-500">{saveMessage}</p> : null}
     </div>
   );
 }

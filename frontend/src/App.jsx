@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
 import { Sidebar } from "./components/layout/Sidebar";
@@ -53,24 +53,47 @@ function DashboardLayout({ user, onLogout }) {
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
 
+  useEffect(() => {
+    const cachedUser = localStorage.getItem("coas-user");
+    if (!cachedUser) {
+      return;
+    }
+
+    try {
+      setCurrentUser(JSON.parse(cachedUser));
+    } catch {
+      localStorage.removeItem("coas-user");
+    }
+  }, []);
+
+  const handleLogin = (user) => {
+    setCurrentUser(user);
+    localStorage.setItem("coas-user", JSON.stringify(user));
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem("coas-user");
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} replace />} />
-      <Route path="/login" element={<Login onLogin={setCurrentUser} />} />
+      <Route path="/login" element={<Login onLogin={handleLogin} />} />
       <Route
         element={
           <DashboardLayout
             user={currentUser}
-            onLogout={() => setCurrentUser(null)}
+            onLogout={handleLogout}
           />
         }
       >
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/subjects" element={<SubjectWorkspace />} />
-        <Route path="/subjects/:subjectCode/workspace" element={<SubjectWorkspace />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/dashboard" element={<Dashboard user={currentUser} />} />
+        <Route path="/subjects" element={<SubjectWorkspace user={currentUser} />} />
+        <Route path="/subjects/:subjectCode/workspace" element={<SubjectWorkspace user={currentUser} />} />
+        <Route path="/profile" element={<Profile user={currentUser} />} />
+        <Route path="/reports" element={<Reports user={currentUser} />} />
+        <Route path="/settings" element={<Settings user={currentUser} />} />
       </Route>
     </Routes>
   );

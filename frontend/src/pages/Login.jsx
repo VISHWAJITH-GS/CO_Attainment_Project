@@ -6,20 +6,8 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { devLogin } from "../lib/api";
 import logo from "/tce-logo.png";
-
-const TEST_USERS = {
-  "adim@tce.edu": {
-    name: "Admin User",
-    role: "Admin",
-  },
-  "staff@tce.edu": {
-    name: "Staff User",
-    role: "Staff",
-  },
-};
-
-const TEST_PASSWORD = "tce123";
 
 function Login({ onLogin }) {
 
@@ -30,7 +18,7 @@ function Login({ onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
     setLoading(true);
 
@@ -41,22 +29,15 @@ function Login({ onLogin }) {
     return;
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const matchedUser = TEST_USERS[normalizedEmail];
-
-  if (!matchedUser || password !== TEST_PASSWORD) {
-    setError("Invalid credentials. Use the provided test accounts.");
-    setLoading(false);
-    return;
-  }
-
-  onLogin?.({
-    email: normalizedEmail,
-    ...matchedUser,
-  });
-
-  navigate("/dashboard");
-  setLoading(false);
+    try {
+      const user = await devLogin(email, password);
+      onLogin?.(user);
+      navigate("/dashboard");
+    } catch (loginError) {
+      setError(loginError.message || "Login failed.");
+    } finally {
+      setLoading(false);
+    }
 
 };
 
@@ -221,9 +202,9 @@ const prefersReducedMotion = useReducedMotion();
       )}
 
       <motion.div variants={itemVariants} className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 text-xs text-slate-600">
-        <p className="font-semibold text-slate-700">Test users</p>
-        <p>Admin: adim@tce.edu | Password: tce123</p>
-        <p>Staff: staff@tce.edu | Password: tce123</p>
+        <p className="font-semibold text-slate-700">Dev login mode</p>
+        <p>Use any valid TCE email.</p>
+        <p>Password: tce123</p>
       </motion.div>
 
       <motion.div variants={itemVariants}>

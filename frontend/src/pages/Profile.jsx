@@ -1,15 +1,37 @@
 import { Building2, IdCard, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { getProfile } from "../lib/api";
 
-const facultyProfile = {
-  name: "Staff_name",
-  email: "Staff_name@tce.edu",
-  department: "Computer Science and Engineering",
-  role: "Faculty",
-  employeeId: "TCE-FAC-1024",
-};
+export default function Profile({ user }) {
+  const [facultyProfile, setFacultyProfile] = useState({
+    name: "Staff User",
+    email: user?.email || "",
+    department: "Computer Science and Engineering",
+    role: user?.role || "Staff",
+    employeeId: "TCE-FAC-0000",
+  });
 
-export default function Profile() {
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const data = await getProfile(user.email);
+        setFacultyProfile(data);
+      } catch {
+        setFacultyProfile((prev) => ({
+          ...prev,
+          email: user.email,
+        }));
+      }
+    }
+
+    loadProfile();
+  }, [user?.email]);
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">

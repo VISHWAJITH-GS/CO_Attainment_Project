@@ -1,0 +1,44 @@
+{
+  "profiles": {},
+  "workspace_progress": {
+    "faculty.test1@tce.edu::CS302": {
+      "user_email": "faculty.test1@tce.edu",
+      "subject_code": "CS302",
+      "uploaded_files": {
+        "qp": true,
+        "terminal": true,
+        "assignment2": true,
+        "assignment1": true,
+        "cat2": true,
+        "marks": true,
+        "cat1": true
+      },
+      "parameters": {
+        "ep": "70",
+        "constraint": "60",
+        "ela": {
+          "CO1": "700",
+          "CO2": "70",
+          "CO3": "70",
+          "CO4": "70",
+          "CO5": "70",
+          "CO6": "70"
+        }
+      },
+      "step": 4,
+      "updated_at": "2026-03-19T07:56:28.667622+00:00"
+    }
+  },
+  "reports": {
+    "faculty.test1@tce.edu::CS302": {
+      "user_email": "faculty.test1@tce.edu",
+      "subject_code": "CS302",
+      "subject_name": "Design and Analysis of Algorithms",
+      "semester": "Semester V",
+      "status": "Generated",
+      "generated_on": "2026-03-19T07:56:28.220355+00:00",
+      "report_text": "CO Attainment Report\nSubject Code: CS302\nSubject Name: Design and Analysis of Algorithms\nSemester: Semester V\nStatus: Generated\nGenerated On (UTC): 2026-03-19T07:56:28.220355+00:00\nFinal Output: D:\\College Project\\CO_Attainment_Project\\backend\\workspace_uploads\\cs302\\faculty.test1_tce.edu\\outputs\\OFFICIAL_REPORT.xlsx",
+      "updated_at": "2026-03-19T07:56:28.220355+00:00"
+    }
+  }
+}

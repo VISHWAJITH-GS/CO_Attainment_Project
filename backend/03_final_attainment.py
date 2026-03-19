@@ -8,13 +8,13 @@ import re
 # VS CODE SETUP - DEFINE LOCAL FILE PATHS HERE
 # Input files go in data/   |   Outputs go in outputs/
 # ==============================
-CO_FILE       = os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx")  # Output from Script 2
-TERMINAL_FILE = os.path.join("data",    "TERMINAL.xlsx")
-OUT_FILE      = os.path.join("outputs", "CO_ATTAINMENT_SHEET2_FINAL_ABSOLUTE_COMPLETE.xlsx")
+CO_FILE = os.getenv("CO_FILE", os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx"))
+TERMINAL_FILE = os.getenv("TERMINAL_FILE", os.path.join("data", "TERMINAL.xlsx"))
+OUT_FILE = os.getenv("FINAL_OUT_FILE", os.path.join("outputs", "CO_ATTAINMENT_SHEET2_FINAL_ABSOLUTE_COMPLETE.xlsx"))
 
-print("✅ Files assigned:")
-print("   CO File        →", CO_FILE)
-print("   Terminal File  →", TERMINAL_FILE)
+print("Files assigned:")
+print("   CO File        ->", CO_FILE)
+print("   Terminal File  ->", TERMINAL_FILE)
 
 # ==============================
 # LOAD WORKBOOKS
@@ -25,6 +25,31 @@ sheet2 = wb["Sheet2"] if "Sheet2" in wb.sheetnames else wb.create_sheet("Sheet2"
 
 term_wb = load_workbook(TERMINAL_FILE, data_only=False)
 term_ws = term_wb.active
+
+
+def env_float(name):
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return None
+    return float(raw)
+
+
+def get_ela_values():
+    csv_values = os.getenv("ELA_VALUES")
+    if csv_values:
+        parts = [p.strip() for p in csv_values.split(",") if p.strip()]
+        if len(parts) != 6:
+            raise ValueError("ELA_VALUES must contain 6 comma-separated numbers for CO1..CO6")
+        return [float(p) for p in parts]
+
+    values = []
+    for i in range(6):
+        env_val = env_float(f"ELA_CO{i+1}")
+        if env_val is not None:
+            values.append(env_val)
+            continue
+        values.append(float(input(f"Enter ELA for CO{i+1}: ")))
+    return values
 
 # ==============================
 # HELPERS
@@ -120,12 +145,16 @@ for i in range(6):
     col = get_column_letter(19 + i)
     sheet2.cell(summary_row, 19 + i).value = f"=COUNT({col}8:{col}{last_student})"
 
-ep = float(input("\nEnter EP value: "))
+ep = env_float("EP_VALUE")
+if ep is None:
+    ep = float(input("\nEnter EP value: "))
 sheet2.cell(summary_row + 1, 18).value = "EP"
 for i in range(6):
     sheet2.cell(summary_row + 1, 19 + i).value = ep
 
-constraint = input("Enter Constraint value (e.g. 79.99): ")
+constraint = os.getenv("CONSTRAINT_VALUE")
+if constraint is None or str(constraint).strip() == "":
+    constraint = input("Enter Constraint value (e.g. 79.99): ")
 sheet2.cell(summary_row + 2, 18).value = "Constraint"
 for i in range(6):
     col = get_column_letter(19 + i)
@@ -148,8 +177,9 @@ rel_row = ela_row + 1
 sheet2.cell(ela_row, 18).value = "ELA"
 sheet2.cell(rel_row, 18).value = "Relative Attainment (%)"
 
+ela_values = get_ela_values()
 for i in range(6):
-    ela = float(input(f"Enter ELA for CO{i+1}: "))
+    ela = ela_values[i]
     sheet2.cell(ela_row, 19 + i).value = ela
 
     actual = get_column_letter(19 + i) + str(summary_row + 3)
@@ -164,4 +194,4 @@ for i in range(6):
 # SAVE
 # ==============================
 wb.save(OUT_FILE)
-print(f"\n🏁 CO ATTAINMENT CLOSED — Relative Attainment calculated. Saved to {OUT_FILE}")
+print(f"\nCO ATTAINMENT CLOSED - Relative Attainment calculated. Saved to {OUT_FILE}")

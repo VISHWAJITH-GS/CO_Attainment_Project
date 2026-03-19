@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -12,21 +13,46 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { getProfile, updatePassword } from "../lib/api";
 
-const facultyProfile = {
-  name: "Staff_name",
-  email: "Staff_name@tce.edu",
-  department: "Computer Science and Engineering",
-  role: "Faculty",
-};
-
-export default function Settings() {
+export default function Settings({ user }) {
   const navigate = useNavigate();
+  const [facultyProfile, setFacultyProfile] = useState({
+    name: "Staff User",
+    email: user?.email || "",
+    department: "Computer Science and Engineering",
+    role: user?.role || "Staff",
+  });
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [messageType, setMessageType] = useState("idle");
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const profile = await getProfile(user.email);
+        setFacultyProfile({
+          name: profile.name,
+          email: profile.email,
+          department: profile.department,
+          role: profile.role,
+        });
+      } catch {
+        setFacultyProfile((prev) => ({
+          ...prev,
+          email: user.email,
+        }));
+      }
+    }
+
+    loadProfile();
+  }, [user?.email]);
 
   const handlePasswordUpdate = (event) => {
     event.preventDefault();
@@ -49,11 +75,22 @@ export default function Settings() {
       return;
     }
 
-    setMessageType("success");
-    setPasswordMessage("Password updated successfully.");
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    updatePassword({
+      email: facultyProfile.email,
+      currentPassword,
+      newPassword,
+    })
+      .then((data) => {
+        setMessageType("success");
+        setPasswordMessage(data.message || "Password updated successfully.");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      })
+      .catch((error) => {
+        setMessageType("error");
+        setPasswordMessage(error.message || "Password update failed.");
+      });
   };
 
   return (

@@ -3,6 +3,7 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { useState } from "react";
+import { uploadWorkspaceFile } from "../../lib/api";
 
 const uploadFields = [
   { key: "qp", label: "Upload Question Paper" },
@@ -14,21 +15,44 @@ const uploadFields = [
   { key: "terminal", label: "Upload Terminal Marks" },
 ];
 
-export default function FileUploadSection({ isOpen, completed, onUploadChange, onToggle }) {
-  const [uploadedFiles, setUploadedFiles] = useState({});
-  
-  const handleUpload = (key) => {
-  const updated = {
-    ...uploadedFiles,
-    [key]: true,
+export default function FileUploadSection({
+  isOpen,
+  completed,
+  onUploadChange,
+  onToggle,
+  uploadedFiles = {},
+  user,
+  subjectCode,
+}) {
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const [uploadingKey, setUploadingKey] = useState("");
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  const handleUpload = async (key) => {
+    if (!selectedFiles[key]) {
+      setUploadMessage("Please choose a file before uploading.");
+      return;
+    }
+    if (!subjectCode || !user?.email) {
+      setUploadMessage("Please log in again before uploading files.");
+      return;
+    }
+
+    setUploadingKey(key);
+    setUploadMessage("");
+
+    try {
+      const response = await uploadWorkspaceFile(subjectCode, key, user.email, selectedFiles[key]);
+      if (onUploadChange) {
+        onUploadChange(response.uploadedFiles || { ...uploadedFiles, [key]: true }, response.step || 1);
+      }
+      setUploadMessage(response.message || `${key} uploaded.`);
+    } catch (error) {
+      setUploadMessage(error.message || "Upload failed.");
+    } finally {
+      setUploadingKey("");
+    }
   };
-
-  setUploadedFiles(updated);
-
-  if (onUploadChange) {
-    onUploadChange(updated);
-  }
-};
 
   return (
     <Card className="border-red-100/80 shadow-[0_16px_35px_-32px_rgba(15,23,42,0.65)]">
@@ -77,10 +101,17 @@ export default function FileUploadSection({ isOpen, completed, onUploadChange, o
               {item.label}
             </p>
 
-            <Input type="file" className="bg-slate-50 text-sm" />
+            <Input
+              type="file"
+              className="bg-slate-50 text-sm"
+              onChange={(event) => {
+                const file = event.target.files?.[0] || null;
+                setSelectedFiles((prev) => ({ ...prev, [item.key]: file }));
+              }}
+            />
 
             <Button className="w-full md:w-auto" onClick={() => handleUpload(item.key)}>
-              Upload
+              {uploadingKey === item.key ? "Uploading..." : "Upload"}
             </Button>
 
             <span
@@ -94,6 +125,7 @@ export default function FileUploadSection({ isOpen, completed, onUploadChange, o
             </span>
           </div>
         ))}
+        {uploadMessage ? <p className="text-xs text-slate-600">{uploadMessage}</p> : null}
       </CardContent>)}
     </Card>
   );

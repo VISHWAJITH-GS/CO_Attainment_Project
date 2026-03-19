@@ -1,57 +1,8 @@
 import { CalendarDays, CircleCheck, Clock3, Download, FileSpreadsheet } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-
-const reports = [
-  {
-    id: "CS301",
-    subjectCode: "CS301",
-    subjectName: "Database Management Systems",
-    semester: "Semester V",
-    generatedOn: "12 Feb 2026",
-    status: "Generated",
-  },
-  {
-    id: "CS302",
-    subjectCode: "CS302",
-    subjectName: "Design and Analysis of Algorithms",
-    semester: "Semester V",
-    generatedOn: "10 Feb 2026",
-    status: "Generated",
-  },
-  {
-    id: "CS401",
-    subjectCode: "CS401",
-    subjectName: "Machine Learning",
-    semester: "Semester VII",
-    generatedOn: null,
-    status: "Processing",
-  },
-  {
-    id: "CS403",
-    subjectCode: "CS403",
-    subjectName: "Compiler Design",
-    semester: "Semester VII",
-    generatedOn: null,
-    status: "Pending",
-  },
-  {
-    id: "IT305",
-    subjectCode: "IT305",
-    subjectName: "Software Engineering",
-    semester: "Semester V",
-    generatedOn: "08 Feb 2026",
-    status: "Generated",
-  },
-  {
-    id: "IT407",
-    subjectCode: "IT407",
-    subjectName: "Cloud Computing",
-    semester: "Semester VII",
-    generatedOn: "11 Feb 2026",
-    status: "Generated",
-  },
-];
+import { downloadReportFile, getReports } from "../lib/api";
 
 const statusStyles = {
   Generated: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -59,28 +10,40 @@ const statusStyles = {
   Processing: "border-sky-200 bg-sky-50 text-sky-700",
 };
 
-function handleDownloadReport(report) {
-  const content = [
-    "CO Attainment Report",
-    `Subject Code: ${report.subjectCode}`,
-    `Subject Name: ${report.subjectName}`,
-    `Semester: ${report.semester}`,
-    `Status: ${report.status}`,
-    `Generated On: ${report.generatedOn || "Not yet generated"}`,
-  ].join("\n");
-
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+async function handleDownloadReport(report, userEmail) {
+  const blob = await downloadReportFile(report.subjectCode, userEmail);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${report.subjectCode}_CO_Attainment_Report.txt`;
+  link.download = `${report.subjectCode}_OFFICIAL_REPORT.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 
-export default function Reports() {
+export default function Reports({ user }) {
+  const [reports, setReports] = useState([]);
+  const [error, setError] = useState("");
+  const [downloadingId, setDownloadingId] = useState("");
+
+  useEffect(() => {
+    async function loadReports() {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const data = await getReports(user.email);
+        setReports(data || []);
+      } catch (loadError) {
+        setError(loadError.message || "Failed to load reports.");
+      }
+    }
+
+    loadReports();
+  }, [user?.email]);
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
@@ -91,6 +54,8 @@ export default function Reports() {
           </p>
         </CardHeader>
       </Card>
+
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {reports.map((report) => {
@@ -132,10 +97,24 @@ export default function Reports() {
                 <Button
                   className="w-full"
                   disabled={!canDownload}
-                  onClick={() => handleDownloadReport(report)}
+                  onClick={async () => {
+                    if (!user?.email) {
+                      setError("Please log in again.");
+                      return;
+                    }
+
+                    setDownloadingId(report.id);
+                    try {
+                      await handleDownloadReport(report, user.email);
+                    } catch (downloadError) {
+                      setError(downloadError.message || "Failed to download report.");
+                    } finally {
+                      setDownloadingId("");
+                    }
+                  }}
                 >
                   <Download size={16} className="mr-2" />
-                  Download Report
+                  {downloadingId === report.id ? "Downloading..." : "Download Report"}
                 </Button>
 
                 {!canDownload ? (

@@ -1,18 +1,27 @@
 import { BookOpen, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-
-const assignedSubjects = [
-  { code: "CS301", name: "Database Management Systems", semester: "Semester V" },
-  { code: "CS302", name: "Design and Analysis of Algorithms", semester: "Semester V" },
-  { code: "CS401", name: "Machine Learning", semester: "Semester VII" },
-  { code: "CS403", name: "Compiler Design", semester: "Semester VII" },
-  { code: "IT305", name: "Software Engineering", semester: "Semester V" },
-  { code: "IT407", name: "Cloud Computing", semester: "Semester VII" },
-];
+import { getSubjects } from "../lib/api";
 
 export default function Dashboard() {
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadSubjects() {
+      try {
+        const data = await getSubjects();
+        setSubjects(data || []);
+      } catch (loadError) {
+        setError(loadError.message || "Failed to load subjects.");
+      }
+    }
+
+    loadSubjects();
+  }, []);
+
   return (
     <div className="space-y-6 p-4 md:p-6">
       <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
@@ -32,8 +41,10 @@ export default function Dashboard() {
         </CardHeader>
       </Card>
 
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {assignedSubjects.map((subject) => (
+        {subjects.map((subject) => (
           <Card
             key={subject.code}
             className="border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-30px_rgba(127,29,29,0.5)]"

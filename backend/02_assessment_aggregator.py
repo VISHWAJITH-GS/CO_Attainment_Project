@@ -7,19 +7,15 @@ import re
 # Input files go in data/   |   Outputs go in outputs/
 # ==============================
 # TEMPLATE_FILE: name must match the _FINAL.xlsx produced by Script 1
-TEMPLATE_FILE = os.path.join("data",    "CO ATTAINMENT TEMPLATE (1).xlsx")
-CAT1_FILE     = os.path.join("data",    "Cross platform -CAT 1 (1).xlsx")
-CAT2_FILE     = os.path.join("data",    "Cross platform-CAT 2.xlsx")
-ASS1_FILE     = os.path.join("data",    "Cross platform -Ass 1 (1).xlsx")
-ASS2_FILE     = os.path.join("data",    "Cross platform -Ass 2 (1).xlsx")
-OUT_FILE      = os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx")
+TEMPLATE_FILE = os.getenv("TEMPLATE_FILE", os.path.join("data", "CO ATTAINMENT TEMPLATE (1).xlsx"))
+CAT1_FILE = os.getenv("CAT1_FILE", os.path.join("data", "Cross platform -CAT 1 (1).xlsx"))
+CAT2_FILE = os.getenv("CAT2_FILE", os.path.join("data", "Cross platform-CAT 2.xlsx"))
+ASS1_FILE = os.getenv("ASS1_FILE", os.path.join("data", "Cross platform -Ass 1 (1).xlsx"))
+ASS2_FILE = os.getenv("ASS2_FILE", os.path.join("data", "Cross platform -Ass 2 (1).xlsx"))
+OUT_FILE = os.getenv("AGG_OUT_FILE", os.path.join("outputs", "CO_ATTAINMENT_FINAL.xlsx"))
 
-# ==============================
-# LOAD TEMPLATE
-# ==============================
-print(f"Loading Template: {TEMPLATE_FILE}...")
-template_wb = load_workbook(TEMPLATE_FILE)
-template_ws = template_wb.worksheets[1]  # Sheet1 ONLY
+template_wb = None
+template_ws = None
 
 # ==============================
 # HELPERS
@@ -116,16 +112,22 @@ def process_assignment(ass_file, source_start_col, template_start_col, max_cols=
     for idx, val in enumerate(col_max_values):
         template_ws.cell(row=7, column=template_start_col+idx).value = val
 
-# ==============================
-# RUN PIPELINE
-# ==============================
-process_cat(CAT1_FILE, 5, 25)      # CAT-1
-process_cat(CAT2_FILE, 27, 46)     # CAT-2
-process_assignment(ASS1_FILE, 7, 56)  # ASS-1 (BD → BI)
-process_assignment(ASS2_FILE, 7, 64)  # ASS-2 (BL → BQ)
+def run_pipeline() -> str:
+    global template_wb, template_ws
 
-# ==============================
-# SAVE
-# ==============================
-template_wb.save(OUT_FILE)
-print(f"✅ Template populated successfully → {OUT_FILE}")
+    print(f"Loading Template: {TEMPLATE_FILE}...")
+    template_wb = load_workbook(TEMPLATE_FILE)
+    template_ws = template_wb.worksheets[1]
+
+    process_cat(CAT1_FILE, 5, 25)
+    process_cat(CAT2_FILE, 27, 46)
+    process_assignment(ASS1_FILE, 7, 56)
+    process_assignment(ASS2_FILE, 7, 64)
+
+    template_wb.save(OUT_FILE)
+    print(f"Template populated successfully -> {OUT_FILE}")
+    return OUT_FILE
+
+
+if __name__ == "__main__":
+    run_pipeline()
