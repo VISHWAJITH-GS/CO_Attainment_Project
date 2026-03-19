@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import json
+import base64
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,7 +12,7 @@ from typing import Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 from supabase import Client, create_client
 
@@ -58,11 +59,15 @@ REQUIRED_UPLOAD_KEYS = (
     "assignment2",
     "terminal",
 )
+REPORT_FILE_KEY = "official_report"
 
 BACKEND_DIR = Path(__file__).resolve().parent
-UPLOADS_ROOT = BACKEND_DIR / "workspace_uploads"
+RUNTIME_DIR = BACKEND_DIR / "runtime"
+UPLOADS_ROOT = RUNTIME_DIR / "workspace_uploads"
 DEFAULT_TEMPLATE_FILE = BACKEND_DIR / "data" / "CO ATTAINMENT TEMPLATE (1).xlsx"
-LOCAL_STATE_FILE = BACKEND_DIR / "local_state.json"
+LOCAL_STATE_FILE = RUNTIME_DIR / "local_state.json"
+
+RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def sanitize_identifier(value: str) -> str:
@@ -146,6 +151,10 @@ def run_python_script(script_name: str, extra_env: dict[str, str]) -> str:
 
 def run_attainment_pipeline(subject_code: str, email: str, parameters: dict[str, Any]) -> dict[str, str]:
     manifest = read_manifest(subject_code, email)
+
+    if not all(manifest.get(key) and Path(manifest[key]).exists() for key in REQUIRED_UPLOAD_KEYS):
+        manifest = materialize_files_from_database(subject_code, email) or manifest
+
     missing = [key for key in REQUIRED_UPLOAD_KEYS if not manifest.get(key) or not Path(manifest[key]).exists()]
     if missing:
         raise RuntimeError(f"Missing uploaded files: {', '.join(missing)}")
@@ -260,6 +269,18 @@ def resolve_final_report_path(subject_code: str, email: str) -> Path:
     report_path = workspace_dir(subject_code, email) / "outputs" / "OFFICIAL_REPORT.xlsx"
     if report_path.exists():
         return report_path
+
+    row = fetch_file_record(email, subject_code, REPORT_FILE_KEY)
+    if row and row.get("file_base64"):
+        try:
+            report_bytes = base64.b64decode(row["file_base64"])
+        except Exception as exc:
+            raise FileNotFoundError("Stored report exists but is corrupted.") from exc
+
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_bytes(report_bytes)
+        return report_path
+
     raise FileNotFoundError("Final report file is not available yet.")
 
 
@@ -317,6 +338,7 @@ def read_local_state() -> dict[str, Any]:
 
 
 def write_local_state(state: dict[str, Any]) -> None:
+    LOCAL_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     LOCAL_STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
@@ -343,6 +365,135 @@ def profile_fallback(email: str) -> dict[str, Any]:
 
 def workspace_key(email: str, subject_code: str) -> str:
     return f"{email}::{subject_code.upper()}"
+
+
+def file_record_payload(
+    *,
+    normalized_email: str,
+    subject_code: str,
+    file_key: str,
+    file_name: str,
+    content_type: str,
+    file_bytes: bytes,
+) -> dict[str, Any]:
+    now = datetime.now(timezone.utc).isoformat()
+    return {
+        "user_email": normalized_email,
+        "subject_code": subject_code.upper(),
+        "file_key": file_key,
+        "file_name": file_name,
+        "content_type": content_type,
+        "file_size": len(file_bytes),
+        "file_base64": base64.b64encode(file_bytes).decode("ascii"),
+        "updated_at": now,
+    }
+
+
+def upsert_file_record(payload: dict[str, Any]) -> bool:
+    try:
+        supabase.table("workspace_files").upsert(
+            payload,
+            on_conflict="user_email,subject_code,file_key",
+        ).execute()
+        return True
+    except Exception as exc:
+        if is_missing_table_error(exc, "workspace_files"):
+            return False
+        raise
+
+
+def fetch_file_records(normalized_email: str, subject_code: str) -> list[dict[str, Any]]:
+    try:
+        response = (
+            supabase.table("workspace_files")
+            .select("*")
+            .eq("user_email", normalized_email)
+            .eq("subject_code", subject_code.upper())
+            .execute()
+        )
+        return response.data or []
+    except Exception as exc:
+        if is_missing_table_error(exc, "workspace_files"):
+            return []
+        raise
+
+
+def fetch_file_record(normalized_email: str, subject_code: str, file_key: str) -> dict[str, Any] | None:
+    try:
+        response = (
+            supabase.table("workspace_files")
+            .select("*")
+            .eq("user_email", normalized_email)
+            .eq("subject_code", subject_code.upper())
+            .eq("file_key", file_key)
+            .limit(1)
+            .execute()
+        )
+        rows = response.data or []
+        return rows[0] if rows else None
+    except Exception as exc:
+        if is_missing_table_error(exc, "workspace_files"):
+            return None
+        raise
+
+
+def materialize_files_from_database(subject_code: str, normalized_email: str) -> dict[str, str]:
+    records = fetch_file_records(normalized_email, subject_code)
+    if not records:
+        return {}
+
+    target_dir = workspace_dir(subject_code, normalized_email)
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = read_manifest(subject_code, normalized_email)
+    updated = False
+
+    for row in records:
+        key = str(row.get("file_key") or "").strip()
+        if not key:
+            continue
+        b64 = row.get("file_base64")
+        if not b64:
+            continue
+
+        try:
+            file_bytes = base64.b64decode(b64)
+        except Exception:
+            continue
+
+        original_name = str(row.get("file_name") or f"{key}.bin")
+        suffix = Path(original_name).suffix or ".bin"
+        destination = target_dir / f"{key}{suffix.lower()}"
+
+        # Skip rewriting if manifest already points to an existing file.
+        existing = manifest.get(key)
+        if existing and Path(existing).exists():
+            continue
+
+        destination.write_bytes(file_bytes)
+        manifest[key] = str(destination)
+        updated = True
+
+    if updated:
+        write_manifest(subject_code, normalized_email, manifest)
+
+    return manifest
+
+
+def persist_generated_report_file(normalized_email: str, subject_code: str, final_output_path: str) -> None:
+    path = Path(final_output_path)
+    if not path.exists():
+        return
+
+    payload = file_record_payload(
+        normalized_email=normalized_email,
+        subject_code=subject_code,
+        file_key=REPORT_FILE_KEY,
+        file_name=path.name,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        file_bytes=path.read_bytes(),
+    )
+    upsert_file_record(payload)
 
 
 def upsert_profile(email: str) -> dict[str, Any]:
@@ -532,6 +683,7 @@ def save_workspace_progress(subject_code: str, payload: WorkspaceProgressRequest
     if files_ready(payload.uploadedFiles) and params_ready(payload.parameters):
         try:
             pipeline = run_attainment_pipeline(subject_code, normalized_email, payload.parameters)
+            persist_generated_report_file(normalized_email, subject_code, pipeline["finalOutput"])
             subj_name, sem = subject_details(subject_code)
             upsert_generated_report(
                 normalized_email=normalized_email,
@@ -601,6 +753,16 @@ async def upload_workspace_file(
     manifest[key] = str(destination)
     write_manifest(subject_code, normalized_email, manifest)
 
+    payload = file_record_payload(
+        normalized_email=normalized_email,
+        subject_code=subject_code,
+        file_key=key,
+        file_name=file.filename or destination.name,
+        content_type=file.content_type or "application/octet-stream",
+        file_bytes=destination.read_bytes(),
+    )
+    upsert_file_record(payload)
+
     row = {}
     try:
         existing = (
@@ -652,6 +814,7 @@ async def upload_workspace_file(
     if files_ready(uploaded_files) and params_ready(parameters):
         try:
             pipeline = run_attainment_pipeline(subject_code, normalized_email, parameters)
+            persist_generated_report_file(normalized_email, subject_code, pipeline["finalOutput"])
             subj_name, sem = subject_details(subject_code)
             upsert_generated_report(
                 normalized_email=normalized_email,
@@ -787,6 +950,7 @@ def generate_report(subject_code: str, payload: GenerateReportRequest) -> dict[s
 
     try:
         pipeline = run_attainment_pipeline(subject_code, normalized_email, parameters)
+        persist_generated_report_file(normalized_email, subject_code, pipeline["finalOutput"])
         subject_name = payload.subjectName or subject_details(subject_code)[0]
         semester = payload.semester or subject_details(subject_code)[1]
         upsert_generated_report(

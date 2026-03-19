@@ -71,6 +71,28 @@ create table if not exists public.reports (
 create index if not exists reports_user_email_updated_at_idx
   on public.reports (user_email, updated_at desc);
 
+create table if not exists public.workspace_files (
+  id bigint generated always as identity primary key,
+  user_email text not null,
+  subject_code text not null,
+  file_key text not null,
+  file_name text not null,
+  content_type text,
+  file_size bigint,
+  file_base64 text not null,
+  updated_at timestamptz not null default now(),
+  constraint workspace_files_tce_email_check check (user_email ~* '^[A-Za-z0-9._%+-]+@tce\.edu$'),
+  unique (user_email, subject_code, file_key),
+  constraint workspace_files_user_email_fkey
+    foreign key (user_email)
+    references public.user_profiles (email)
+    on update cascade
+    on delete cascade
+);
+
+create index if not exists workspace_files_user_email_subject_idx
+  on public.workspace_files (user_email, subject_code);
+
 drop trigger if exists user_profiles_set_updated_at on public.user_profiles;
 create trigger user_profiles_set_updated_at
 before update on public.user_profiles
@@ -86,5 +108,11 @@ execute function public.set_updated_at();
 drop trigger if exists reports_set_updated_at on public.reports;
 create trigger reports_set_updated_at
 before update on public.reports
+for each row
+execute function public.set_updated_at();
+
+drop trigger if exists workspace_files_set_updated_at on public.workspace_files;
+create trigger workspace_files_set_updated_at
+before update on public.workspace_files
 for each row
 execute function public.set_updated_at();

@@ -5,6 +5,7 @@ This folder now includes:
 - FastAPI server (`app.py`) connected to Supabase
 - SQL schema (`supabase_schema.sql`)
 - Existing Python scripts for CO processing
+- Runtime-generated artifacts under `runtime/` (workspace uploads and local state)
 
 ## Setup
 

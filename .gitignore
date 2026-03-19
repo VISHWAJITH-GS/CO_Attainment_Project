@@ -52,6 +52,11 @@ env/
 # Output files (generated — do not commit)
 outputs/*.xlsx
 
+# Backend runtime artifacts
+backend/runtime/
+backend/workspace_uploads/
+backend/local_state.json
+
 # Input data files (may contain sensitive student data)
 data/*.xlsx
 data/*.docx
