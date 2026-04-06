@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
 import { Sidebar } from "./components/layout/Sidebar";
 import Dashboard from "./pages/Dashboard";
@@ -8,6 +9,17 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SubjectWorkspace from "./pages/SubjectWorkspace";
+
+/** Wraps the nested Outlet with AnimatePresence keyed on location */
+function AnimatedOutlet() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {/* Outlet is re-mounted when the key (pathname) changes */}
+      <Outlet key={location.pathname} />
+    </AnimatePresence>
+  );
+}
 
 function DashboardLayout({ user, onLogout }) {
   const navigate = useNavigate();
@@ -43,7 +55,8 @@ function DashboardLayout({ user, onLogout }) {
             }`
           }
         >
-          <Outlet />
+          {/* AnimatedOutlet handles page transitions within the dashboard shell */}
+          <AnimatedOutlet />
         </main>
       </div>
     </div>
