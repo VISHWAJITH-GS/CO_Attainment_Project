@@ -1,16 +1,44 @@
 import { Building2, IdCard, Mail, ShieldCheck, UserRound } from "lucide-react";
+<<<<<<< HEAD
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { pageVariants, containerVariants, cardVariants, sectionVariants } from "../lib/animations";
+=======
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { getProfile } from "../lib/api";
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
-const facultyProfile = {
-  name: "Staff_name",
-  email: "Staff_name@tce.edu",
-  department: "Computer Science and Engineering",
-  role: "Faculty",
-  employeeId: "TCE-FAC-1024",
-};
+export default function Profile({ user }) {
+  const [facultyProfile, setFacultyProfile] = useState({
+    name: "Staff User",
+    email: user?.email || "",
+    department: "Computer Science and Engineering",
+    role: user?.role || "Staff",
+    employeeId: "TCE-FAC-0000",
+  });
 
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const data = await getProfile(user.email);
+        setFacultyProfile(data);
+      } catch {
+        setFacultyProfile((prev) => ({
+          ...prev,
+          email: user.email,
+        }));
+      }
+    }
+
+    loadProfile();
+  }, [user?.email]);
+
+<<<<<<< HEAD
 const fields = [
   { label: "Name", icon: null, value: facultyProfile.name, span: false },
   { label: "Email", icon: Mail, value: facultyProfile.email, span: false },
@@ -20,6 +48,8 @@ const fields = [
 ];
 
 export default function Profile() {
+=======
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   return (
     <motion.div
       className="space-y-6 p-4 md:p-6"

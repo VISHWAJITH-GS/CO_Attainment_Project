@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { CalendarDays, CircleCheck, Clock3, Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,6 +61,13 @@ const reports = [
     status: "Generated",
   },
 ];
+=======
+import { CalendarDays, CircleCheck, Clock3, Download, FileSpreadsheet } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { downloadReportFile, getReports } from "../lib/api";
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 const statusStyles = {
   Generated: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -67,27 +75,19 @@ const statusStyles = {
   Processing: "border-sky-200 bg-sky-50 text-sky-700",
 };
 
-function handleDownloadReport(report) {
-  const content = [
-    "CO Attainment Report",
-    `Subject Code: ${report.subjectCode}`,
-    `Subject Name: ${report.subjectName}`,
-    `Semester: ${report.semester}`,
-    `Status: ${report.status}`,
-    `Generated On: ${report.generatedOn || "Not yet generated"}`,
-  ].join("\n");
-
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+async function handleDownloadReport(report, userEmail) {
+  const blob = await downloadReportFile(report.subjectCode, userEmail);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${report.subjectCode}_CO_Attainment_Report.txt`;
+  link.download = `${report.subjectCode}_OFFICIAL_REPORT.xlsx`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
 
+<<<<<<< HEAD
 function DownloadButton({ report }) {
   const [loading, setLoading] = useState(false);
   const canDownload = report.status === "Generated";
@@ -137,6 +137,30 @@ function DownloadButton({ report }) {
 }
 
 export default function Reports() {
+=======
+export default function Reports({ user }) {
+  const [reports, setReports] = useState([]);
+  const [error, setError] = useState("");
+  const [downloadingId, setDownloadingId] = useState("");
+
+  useEffect(() => {
+    async function loadReports() {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const data = await getReports(user.email);
+        setReports(data || []);
+      } catch (loadError) {
+        setError(loadError.message || "Failed to load reports.");
+      }
+    }
+
+    loadReports();
+  }, [user?.email]);
+
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   return (
     <motion.div
       className="space-y-6 p-4 md:p-6"
@@ -157,6 +181,7 @@ export default function Reports() {
         </Card>
       </motion.div>
 
+<<<<<<< HEAD
       {/* Report cards */}
       <motion.div
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
@@ -171,6 +196,19 @@ export default function Reports() {
             whileHover={{ y: -4, transition: { duration: 0.22, ease: "easeOut" } }}
           >
             <Card className="card-hover h-full border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
+=======
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {reports.map((report) => {
+          const canDownload = report.status === "Generated";
+
+          return (
+            <Card
+              key={report.id}
+              className="border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_40px_-30px_rgba(127,29,29,0.5)]"
+            >
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
               <CardHeader className="space-y-3 pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-red-700">
@@ -208,7 +246,32 @@ export default function Reports() {
                   </p>
                 </div>
 
+<<<<<<< HEAD
                 <DownloadButton report={report} />
+=======
+                <Button
+                  className="w-full"
+                  disabled={!canDownload}
+                  onClick={async () => {
+                    if (!user?.email) {
+                      setError("Please log in again.");
+                      return;
+                    }
+
+                    setDownloadingId(report.id);
+                    try {
+                      await handleDownloadReport(report, user.email);
+                    } catch (downloadError) {
+                      setError(downloadError.message || "Failed to download report.");
+                    } finally {
+                      setDownloadingId("");
+                    }
+                  }}
+                >
+                  <Download size={16} className="mr-2" />
+                  {downloadingId === report.id ? "Downloading..." : "Download Report"}
+                </Button>
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
                 {report.status !== "Generated" && (
                   <p className="text-xs text-slate-500">
