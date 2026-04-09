@@ -5,6 +5,8 @@ import subprocess
 import sys
 import json
 import base64
+import hashlib
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -14,22 +16,14 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
-from supabase import Client, create_client
 
 load_dotenv()
 
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
 ALLOWED_ORIGIN_REGEX = os.getenv(
     "ALLOWED_ORIGIN_REGEX",
     r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
 )
-
-if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
-    raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in backend environment.")
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
 app = FastAPI(title="CO Attainment API", version="1.0.0")
 app.add_middleware(
@@ -66,8 +60,445 @@ RUNTIME_DIR = BACKEND_DIR / "runtime"
 UPLOADS_ROOT = RUNTIME_DIR / "workspace_uploads"
 DEFAULT_TEMPLATE_FILE = BACKEND_DIR / "data" / "CO ATTAINMENT TEMPLATE (1).xlsx"
 LOCAL_STATE_FILE = RUNTIME_DIR / "local_state.json"
+USER_DB_FILE = RUNTIME_DIR / "users.db"
 
 RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def password_hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def init_user_db() -> None:
+    USER_DB_FILE.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(USER_DB_FILE)
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                email TEXT PRIMARY KEY,
+                password_hash TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                role TEXT NOT NULL,
+                department TEXT NOT NULL,
+                employee_id TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+
+        now = datetime.now(timezone.utc).isoformat()
+        seed_rows = [
+            (
+                "faculty.test1@tce.edu",
+                password_hash("tce123"),
+                "Faculty Test User",
+                "Staff",
+                "Computer Science and Engineering",
+                "TCE-CSE-TEST1",
+                1,
+                now,
+                now,
+            ),
+            # Computer Science and Engineering (CSE)
+            (
+                "shalinie@tce.edu",
+                password_hash("tce123"),
+                "Dr. S. Mercy Shalinie",
+                "Staff",
+                "Computer Science and Engineering",
+                "TCE-CSE-1001",
+                1,
+                now,
+                now,
+            ),
+            (
+                "mviji@tce.edu",
+                password_hash("tce123"),
+                "Dr. M. Vijayalakshmi",
+                "Staff",
+                "Computer Science and Engineering",
+                "TCE-CSE-1002",
+                1,
+                now,
+                now,
+            ),
+            (
+                "mkkdit@tce.edu",
+                password_hash("tce123"),
+                "Dr. M. K. Kavitha Devi",
+                "Staff",
+                "Computer Science and Engineering",
+                "TCE-CSE-1003",
+                1,
+                now,
+                now,
+            ),
+            # Mathematics
+            (
+                "bvkmat@tce.edu",
+                password_hash("tce123"),
+                "Dr. B. Vellaikannan",
+                "Staff",
+                "Mathematics",
+                "TCE-MATH-1001",
+                1,
+                now,
+                now,
+            ),
+            (
+                "kumarstays@tce.edu",
+                password_hash("tce123"),
+                "Dr. C. S. Senthilkumar",
+                "Staff",
+                "Mathematics",
+                "TCE-MATH-1002",
+                1,
+                now,
+                now,
+            ),
+            (
+                "suriyaprabha@tce.edu",
+                password_hash("tce123"),
+                "Dr. S. P. Suriya Prabha",
+                "Staff",
+                "Mathematics",
+                "TCE-MATH-1003",
+                1,
+                now,
+                now,
+            ),
+            # Physics
+            (
+                "manickam-mahendran@tce.edu",
+                password_hash("tce123"),
+                "Dr. M. Mahendran",
+                "Staff",
+                "Physics",
+                "TCE-PHY-1001",
+                1,
+                now,
+                now,
+            ),
+            (
+                "nssphy@tce.edu",
+                password_hash("tce123"),
+                "Dr. N. Sankara Subramanian",
+                "Staff",
+                "Physics",
+                "TCE-PHY-1002",
+                1,
+                now,
+                now,
+            ),
+            (
+                "alsphy@tce.edu",
+                password_hash("tce123"),
+                "Dr. AL. Subramaniyan",
+                "Staff",
+                "Physics",
+                "TCE-PHY-1003",
+                1,
+                now,
+                now,
+            ),
+            # Chemistry
+            (
+                "hodchem@tce.edu",
+                password_hash("tce123"),
+                "Dr. M. Kottaisamy",
+                "Staff",
+                "Chemistry",
+                "TCE-CHEM-1001",
+                1,
+                now,
+                now,
+            ),
+            (
+                "velkannan@tce.edu",
+                password_hash("tce123"),
+                "Dr. V. Velkannan",
+                "Staff",
+                "Chemistry",
+                "TCE-CHEM-1002",
+                1,
+                now,
+                now,
+            ),
+            (
+                "drssilango@tce.edu",
+                password_hash("tce123"),
+                "Dr. S. Sivailango",
+                "Staff",
+                "Chemistry",
+                "TCE-CHEM-1003",
+                1,
+                now,
+                now,
+            ),
+            # English
+            (
+                "tamilselvi@tce.edu",
+                password_hash("tce123"),
+                "Dr. A. Tamilselvi",
+                "Staff",
+                "English",
+                "TCE-ENG-1001",
+                1,
+                now,
+                now,
+            ),
+            (
+                "sreng@tce.edu",
+                password_hash("tce123"),
+                "Dr. S. Rajaram",
+                "Staff",
+                "English",
+                "TCE-ENG-1002",
+                1,
+                now,
+                now,
+            ),
+            (
+                "jeyajeevakani@tce.edu",
+                password_hash("tce123"),
+                "Dr. G. Jeya Jeevakani",
+                "Staff",
+                "English",
+                "TCE-ENG-1003",
+                1,
+                now,
+                now,
+            ),
+        ]
+        conn.executemany(
+            """
+            INSERT OR IGNORE INTO users (
+                email,
+                password_hash,
+                full_name,
+                role,
+                department,
+                employee_id,
+                is_active,
+                created_at,
+                updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            seed_rows,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def fetch_auth_user(email: str) -> dict[str, Any] | None:
+    conn = sqlite3.connect(USER_DB_FILE)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(
+            """
+            SELECT email, password_hash, full_name, role, department, employee_id, is_active
+            FROM users
+            WHERE email = ?
+            LIMIT 1
+            """,
+            (email,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    return dict(row) if row else None
+
+
+def update_auth_password(email: str, new_password: str) -> None:
+    conn = sqlite3.connect(USER_DB_FILE)
+    try:
+        conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?, updated_at = ?
+            WHERE email = ?
+            """,
+            (password_hash(new_password), datetime.now(timezone.utc).isoformat(), email),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+init_user_db()
+
+
+def _state_defaults() -> dict[str, Any]:
+    return {
+        "profiles": {},
+        "users": {},
+        "workspace_progress": {},
+        "reports": {},
+        "workspace_files": {},
+    }
+
+
+def _read_state_raw() -> dict[str, Any]:
+    if not LOCAL_STATE_FILE.exists():
+        return _state_defaults()
+
+    try:
+        data = json.loads(LOCAL_STATE_FILE.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return _state_defaults()
+        defaults = _state_defaults()
+        for key, default_value in defaults.items():
+            data.setdefault(key, default_value)
+        return data
+    except Exception:
+        return _state_defaults()
+
+
+def _write_state_raw(state: dict[str, Any]) -> None:
+    LOCAL_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    LOCAL_STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+
+
+class LocalResult:
+    def __init__(self, data: list[dict[str, Any]]):
+        self.data = data
+
+
+class LocalTableQuery:
+    def __init__(self, client: "LocalClient", table_name: str):
+        self.client = client
+        self.table_name = table_name
+        self.mode = "select"
+        self.payload: dict[str, Any] | None = None
+        self.on_conflict: str | None = None
+        self.filters: list[tuple[str, Any]] = []
+        self._limit: int | None = None
+        self.order_field: str | None = None
+        self.order_desc = False
+
+    def upsert(self, payload: dict[str, Any], on_conflict: str | None = None) -> "LocalTableQuery":
+        self.mode = "upsert"
+        self.payload = payload
+        self.on_conflict = on_conflict
+        return self
+
+    def select(self, _columns: str = "*") -> "LocalTableQuery":
+        self.mode = "select"
+        return self
+
+    def eq(self, field: str, value: Any) -> "LocalTableQuery":
+        self.filters.append((field, value))
+        return self
+
+    def limit(self, count: int) -> "LocalTableQuery":
+        self._limit = count
+        return self
+
+    def order(self, field: str, desc: bool = False) -> "LocalTableQuery":
+        self.order_field = field
+        self.order_desc = desc
+        return self
+
+    def execute(self) -> LocalResult:
+        if self.mode == "upsert":
+            return self.client._execute_upsert(self.table_name, self.payload or {}, self.on_conflict)
+        return self.client._execute_select(
+            self.table_name,
+            filters=self.filters,
+            limit=self._limit,
+            order_field=self.order_field,
+            order_desc=self.order_desc,
+        )
+
+
+class LocalClient:
+    table_key_map = {
+        "user_profiles": "profiles",
+        "users": "users",
+        "workspace_progress": "workspace_progress",
+        "reports": "reports",
+        "workspace_files": "workspace_files",
+    }
+
+    def table(self, table_name: str) -> LocalTableQuery:
+        if table_name not in self.table_key_map:
+            raise ValueError(f"Unsupported table: {table_name}")
+        return LocalTableQuery(self, table_name)
+
+    def _table_bucket(self, state: dict[str, Any], table_name: str) -> dict[str, dict[str, Any]]:
+        key = self.table_key_map[table_name]
+        bucket = state.get(key)
+        if not isinstance(bucket, dict):
+            bucket = {}
+            state[key] = bucket
+        return bucket
+
+    def _build_row_key(self, table_name: str, payload: dict[str, Any], on_conflict: str | None) -> str:
+        if on_conflict:
+            cols = [part.strip() for part in on_conflict.split(",") if part.strip()]
+        elif table_name in ("user_profiles", "users"):
+            cols = ["email"]
+        else:
+            cols = ["id"]
+
+        values = [str(payload.get(col, "")) for col in cols]
+        key = "::".join(values).strip(":")
+        if key:
+            return key
+        return str(payload.get("id", "")) or str(datetime.now(timezone.utc).timestamp())
+
+    def _next_id(self, bucket: dict[str, dict[str, Any]]) -> int:
+        ids = [int(row.get("id")) for row in bucket.values() if str(row.get("id", "")).isdigit()]
+        return (max(ids) + 1) if ids else 1
+
+    def _execute_upsert(self, table_name: str, payload: dict[str, Any], on_conflict: str | None) -> LocalResult:
+        state = _read_state_raw()
+        bucket = self._table_bucket(state, table_name)
+        row_key = self._build_row_key(table_name, payload, on_conflict)
+        existing = bucket.get(row_key, {})
+        merged = {**existing, **payload}
+        merged.setdefault("id", self._next_id(bucket))
+        bucket[row_key] = merged
+        _write_state_raw(state)
+        return LocalResult([merged])
+
+    def _execute_select(
+        self,
+        table_name: str,
+        *,
+        filters: list[tuple[str, Any]],
+        limit: int | None,
+        order_field: str | None,
+        order_desc: bool,
+    ) -> LocalResult:
+        state = _read_state_raw()
+        bucket = self._table_bucket(state, table_name)
+        rows = list(bucket.values())
+
+        for field, value in filters:
+            rows = [row for row in rows if row.get(field) == value]
+
+        if order_field:
+            rows.sort(key=lambda row: row.get(order_field) or "", reverse=order_desc)
+
+        if limit is not None:
+            rows = rows[:limit]
+
+        return LocalResult(rows)
+
+
+Client = LocalClient
+
+
+def create_client() -> Client:
+    return LocalClient()
+
+
+state_store: Client = create_client()
 
 
 def sanitize_identifier(value: str) -> str:
@@ -76,7 +507,7 @@ def sanitize_identifier(value: str) -> str:
 
 
 def workspace_dir(subject_code: str, email: str) -> Path:
-    return UPLOADS_ROOT / sanitize_identifier(subject_code) / sanitize_identifier(email)
+    return UPLOADS_ROOT / sanitize_identifier(email) / sanitize_identifier(subject_code)
 
 
 def workspace_manifest_path(subject_code: str, email: str) -> Path:
@@ -246,7 +677,7 @@ def upsert_generated_report(
     }
 
     try:
-        supabase.table("reports").upsert(payload, on_conflict="user_email,subject_code").execute()
+        state_store.table("reports").upsert(payload, on_conflict="user_email,subject_code").execute()
         return
     except Exception as exc:
         if not is_missing_table_error(exc, "reports"):
@@ -316,30 +747,15 @@ def ensure_tce_email(email: str) -> str:
 
 
 def is_missing_table_error(exc: Exception, table_name: str) -> bool:
-    text = str(exc)
-    return "PGRST205" in text and f"public.{table_name}" in text
+    return False
 
 
 def read_local_state() -> dict[str, Any]:
-    if not LOCAL_STATE_FILE.exists():
-        return {"profiles": {}, "workspace_progress": {}, "reports": {}}
-
-    try:
-        data = json.loads(LOCAL_STATE_FILE.read_text(encoding="utf-8"))
-        if isinstance(data, dict):
-            data.setdefault("profiles", {})
-            data.setdefault("workspace_progress", {})
-            data.setdefault("reports", {})
-            return data
-    except Exception:
-        pass
-
-    return {"profiles": {}, "workspace_progress": {}, "reports": {}}
+    return _read_state_raw()
 
 
 def write_local_state(state: dict[str, Any]) -> None:
-    LOCAL_STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    LOCAL_STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
+    _write_state_raw(state)
 
 
 def profile_fallback(email: str) -> dict[str, Any]:
@@ -391,7 +807,7 @@ def file_record_payload(
 
 def upsert_file_record(payload: dict[str, Any]) -> bool:
     try:
-        supabase.table("workspace_files").upsert(
+        state_store.table("workspace_files").upsert(
             payload,
             on_conflict="user_email,subject_code,file_key",
         ).execute()
@@ -405,7 +821,7 @@ def upsert_file_record(payload: dict[str, Any]) -> bool:
 def fetch_file_records(normalized_email: str, subject_code: str) -> list[dict[str, Any]]:
     try:
         response = (
-            supabase.table("workspace_files")
+            state_store.table("workspace_files")
             .select("*")
             .eq("user_email", normalized_email)
             .eq("subject_code", subject_code.upper())
@@ -421,7 +837,7 @@ def fetch_file_records(normalized_email: str, subject_code: str) -> list[dict[st
 def fetch_file_record(normalized_email: str, subject_code: str, file_key: str) -> dict[str, Any] | None:
     try:
         response = (
-            supabase.table("workspace_files")
+            state_store.table("workspace_files")
             .select("*")
             .eq("user_email", normalized_email)
             .eq("subject_code", subject_code.upper())
@@ -497,64 +913,17 @@ def persist_generated_report_file(normalized_email: str, subject_code: str, fina
 
 
 def upsert_profile(email: str) -> dict[str, Any]:
-    employee_id = f"TCE-FAC-{abs(hash(email)) % 9000 + 1000}"
-    payload = {
-        "email": email,
-        "full_name": email.split("@")[0].replace(".", " ").title(),
-        "role": "Staff",
-        "department": "Computer Science and Engineering",
-        "employee_id": employee_id,
+    row = fetch_auth_user(email)
+    if not row or not row.get("is_active"):
+        raise HTTPException(status_code=401, detail="Invalid credentials.")
+
+    return {
+        "email": row["email"],
+        "full_name": row["full_name"],
+        "role": row["role"],
+        "department": row["department"],
+        "employee_id": row["employee_id"],
     }
-    try:
-        response = supabase.table("user_profiles").upsert(payload, on_conflict="email").execute()
-        data = response.data or []
-        if isinstance(data, list) and data:
-            return data[0]
-
-        fetch = supabase.table("user_profiles").select("*").eq("email", email).limit(1).execute()
-        fetch_data = fetch.data or []
-        if fetch_data:
-            return fetch_data[0]
-    except Exception as exc:
-        if not is_missing_table_error(exc, "user_profiles"):
-            raise
-
-    # Compatibility fallback for projects that still use a legacy `users` table.
-    legacy_payload = {
-        "email": email,
-        "name": payload["full_name"],
-        "role": payload["role"].lower(),
-        "password_hash": "dev-login",
-    }
-
-    try:
-        legacy_response = supabase.table("users").upsert(legacy_payload, on_conflict="email").execute()
-        legacy_data = legacy_response.data or []
-        if isinstance(legacy_data, list) and legacy_data:
-            row = legacy_data[0]
-            return {
-                "email": row.get("email", email),
-                "full_name": row.get("name") or payload["full_name"],
-                "role": (row.get("role") or "Staff").title(),
-                "department": payload["department"],
-                "employee_id": employee_id,
-            }
-
-        legacy_fetch = supabase.table("users").select("*").eq("email", email).limit(1).execute()
-        legacy_rows = legacy_fetch.data or []
-        if legacy_rows:
-            row = legacy_rows[0]
-            return {
-                "email": row.get("email", email),
-                "full_name": row.get("name") or payload["full_name"],
-                "role": (row.get("role") or "Staff").title(),
-                "department": payload["department"],
-                "employee_id": employee_id,
-            }
-    except Exception:
-        pass
-
-    return profile_fallback(email)
 
 
 @app.get("/health")
@@ -571,7 +940,10 @@ def get_subjects() -> list[dict[str, str]]:
 def dev_login(payload: DevLoginRequest) -> dict[str, Any]:
     email = ensure_tce_email(payload.email)
 
-    if payload.password != "tce123":
+    user = fetch_auth_user(email)
+    if not user or not user.get("is_active"):
+        raise HTTPException(status_code=401, detail="Invalid credentials.")
+    if user.get("password_hash") != password_hash(payload.password):
         raise HTTPException(status_code=401, detail="Invalid credentials.")
 
     try:
@@ -579,7 +951,7 @@ def dev_login(payload: DevLoginRequest) -> dict[str, Any]:
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"Supabase profile setup failed: {exc}",
+            detail=f"Profile setup failed: {exc}",
         ) from exc
 
     return {
@@ -597,6 +969,8 @@ def get_profile(email: str) -> dict[str, Any]:
 
     try:
         profile = upsert_profile(normalized_email)
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to fetch profile: {exc}") from exc
 
@@ -616,7 +990,7 @@ def get_workspace_progress(subject_code: str, email: str) -> dict[str, Any]:
 
     try:
         response = (
-            supabase.table("workspace_progress")
+            state_store.table("workspace_progress")
             .select("*")
             .eq("subject_code", subject_code.upper())
             .eq("user_email", normalized_email)
@@ -664,7 +1038,7 @@ def save_workspace_progress(subject_code: str, payload: WorkspaceProgressRequest
     }
 
     try:
-        supabase.table("workspace_progress").upsert(
+        state_store.table("workspace_progress").upsert(
             upsert_payload,
             on_conflict="user_email,subject_code",
         ).execute()
@@ -703,7 +1077,7 @@ def save_workspace_progress(subject_code: str, payload: WorkspaceProgressRequest
             }
 
             try:
-                supabase.table("workspace_progress").upsert(
+                state_store.table("workspace_progress").upsert(
                     progress_payload,
                     on_conflict="user_email,subject_code",
                 ).execute()
@@ -766,7 +1140,7 @@ async def upload_workspace_file(
     row = {}
     try:
         existing = (
-            supabase.table("workspace_progress")
+            state_store.table("workspace_progress")
             .select("*")
             .eq("subject_code", subject_code.upper())
             .eq("user_email", normalized_email)
@@ -796,7 +1170,7 @@ async def upload_workspace_file(
     }
 
     try:
-        supabase.table("workspace_progress").upsert(
+        state_store.table("workspace_progress").upsert(
             progress_payload,
             on_conflict="user_email,subject_code",
         ).execute()
@@ -835,7 +1209,7 @@ async def upload_workspace_file(
                 "updated_at": datetime.now(timezone.utc).isoformat(),
             }
             try:
-                supabase.table("workspace_progress").upsert(
+                state_store.table("workspace_progress").upsert(
                     final_payload,
                     on_conflict="user_email,subject_code",
                 ).execute()
@@ -864,7 +1238,7 @@ def get_reports(email: str) -> list[dict[str, Any]]:
 
     try:
         response = (
-            supabase.table("reports")
+            state_store.table("reports")
             .select("*")
             .eq("user_email", normalized_email)
             .order("updated_at", desc=True)
@@ -925,7 +1299,7 @@ def generate_report(subject_code: str, payload: GenerateReportRequest) -> dict[s
     progress = {}
     try:
         progress_response = (
-            supabase.table("workspace_progress")
+            state_store.table("workspace_progress")
             .select("*")
             .eq("subject_code", subject_code.upper())
             .eq("user_email", normalized_email)
@@ -970,7 +1344,7 @@ def generate_report(subject_code: str, payload: GenerateReportRequest) -> dict[s
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         try:
-            supabase.table("workspace_progress").upsert(
+            state_store.table("workspace_progress").upsert(
                 progress_payload,
                 on_conflict="user_email,subject_code",
             ).execute()
@@ -984,7 +1358,7 @@ def generate_report(subject_code: str, payload: GenerateReportRequest) -> dict[s
 
         try:
             report_row = (
-                supabase.table("reports")
+                state_store.table("reports")
                 .select("*")
                 .eq("user_email", normalized_email)
                 .eq("subject_code", subject_code.upper())
@@ -1032,10 +1406,19 @@ def download_report(subject_code: str, email: str) -> FileResponse:
 
 @app.post("/api/auth/change-password")
 def change_password(payload: PasswordUpdateRequest) -> dict[str, str]:
-    ensure_tce_email(payload.email)
+    email = ensure_tce_email(payload.email)
 
     if len(payload.newPassword) < 8:
         raise HTTPException(status_code=400, detail="New password must be at least 8 characters.")
 
-    # This route is intentionally a placeholder when using dev-login mode.
-    return {"message": "Password validation passed. Configure Supabase Auth to enable real password updates."}
+    user = fetch_auth_user(email)
+    if not user or not user.get("is_active"):
+        raise HTTPException(status_code=401, detail="Invalid account.")
+
+    if user.get("password_hash") != password_hash(payload.currentPassword):
+        raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+    update_auth_password(email, payload.newPassword)
+
+    return {"message": "Password updated successfully."}
+

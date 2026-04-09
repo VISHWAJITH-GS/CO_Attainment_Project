@@ -203,7 +203,7 @@ const prefersReducedMotion = useReducedMotion();
 
       <motion.div variants={itemVariants} className="rounded-lg border border-slate-200 bg-slate-50/80 p-3 text-xs text-slate-600">
         <p className="font-semibold text-slate-700">Dev login mode</p>
-        <p>Use any valid TCE email.</p>
+        <p>Use: faculty1@tce.edu or faculty2@tce.edu</p>
         <p>Password: tce123</p>
       </motion.div>
 

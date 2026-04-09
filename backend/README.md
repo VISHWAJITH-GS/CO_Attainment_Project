@@ -2,10 +2,19 @@
 
 This folder now includes:
 
-- FastAPI server (`app.py`) connected to Supabase
-- SQL schema (`supabase_schema.sql`)
+- FastAPI server (`app.py`) with local runtime persistence
+- Local SQLite auth database under `runtime/users.db`
 - Existing Python scripts for CO processing
 - Runtime-generated artifacts under `runtime/` (workspace uploads and local state)
+
+## Demo Accounts
+
+- `faculty1@tce.edu` / `tce123`
+- `faculty2@tce.edu` / `tce123`
+
+Uploaded files are stored by account and subject under:
+
+- `runtime/workspace_uploads/<email>/<subject_code>/`
 
 ## Setup
 
@@ -15,11 +24,7 @@ This folder now includes:
     ```
 2. Configure environment:
     - create `.env` from `.env.example`
-    - set `SUPABASE_URL`
-    - set `SUPABASE_SERVICE_KEY`
     - set `ALLOWED_ORIGINS` (usually `http://localhost:5173,http://127.0.0.1:5173`)
-3. Run SQL in Supabase:
-    - execute `supabase_schema.sql` in SQL editor
 
 ## Run API
 
