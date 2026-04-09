@@ -1,7 +1,13 @@
 import { Building2, IdCard, Mail, ShieldCheck, UserRound } from "lucide-react";
+<<<<<<< HEAD
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { pageVariants, containerVariants, cardVariants, sectionVariants } from "../lib/animations";
+=======
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { getProfile } from "../lib/api";
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 export default function Profile({ user }) {
   const [facultyProfile, setFacultyProfile] = useState({
@@ -32,62 +38,82 @@ export default function Profile({ user }) {
     loadProfile();
   }, [user?.email]);
 
+<<<<<<< HEAD
+const fields = [
+  { label: "Name", icon: null, value: facultyProfile.name, span: false },
+  { label: "Email", icon: Mail, value: facultyProfile.email, span: false },
+  { label: "Department", icon: Building2, value: facultyProfile.department, span: false },
+  { label: "Role", icon: ShieldCheck, value: facultyProfile.role, span: false },
+  { label: "Employee ID", icon: IdCard, value: facultyProfile.employeeId, span: true },
+];
+
+export default function Profile() {
+=======
+>>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-2xl text-red-950">Profile</CardTitle>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            View your faculty account details used across the CO Attainment Automation System.
-          </p>
-        </CardHeader>
-      </Card>
+    <motion.div
+      className="space-y-6 p-4 md:p-6"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      {/* Header */}
+      <motion.div variants={sectionVariants}>
+        <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-2xl text-red-950">Profile</CardTitle>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              View your faculty account details used across the CO Attainment Automation System.
+            </p>
+          </CardHeader>
+        </Card>
+      </motion.div>
 
-      <Card className="mx-auto w-full max-w-4xl border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
-        <CardHeader className="pb-5">
-          <CardTitle className="flex items-center gap-2 text-xl text-red-950">
-            <UserRound size={20} className="text-red-900" />
-            Faculty Information
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-              <dt className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">Name</dt>
-              <dd className="mt-2 text-sm font-medium text-slate-900">{facultyProfile.name}</dd>
+      {/* Profile card */}
+      <motion.div variants={cardVariants}>
+        <Card className="mx-auto w-full max-w-4xl border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
+          <CardHeader className="pb-5">
+            <div className="flex items-center gap-4">
+              <motion.div
+                className="grid h-14 w-14 place-items-center rounded-full bg-red-100 text-red-800 shadow-sm"
+                whileHover={{ scale: 1.08, rotate: 3 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+              >
+                <UserRound size={26} />
+              </motion.div>
+              <CardTitle className="flex items-center gap-2 text-xl text-red-950">
+                Faculty Information
+              </CardTitle>
             </div>
+          </CardHeader>
 
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-              <dt className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                <Mail size={14} /> Email
-              </dt>
-              <dd className="mt-2 text-sm font-medium text-slate-900">{facultyProfile.email}</dd>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-              <dt className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                <Building2 size={14} /> Department
-              </dt>
-              <dd className="mt-2 text-sm font-medium text-slate-900">{facultyProfile.department}</dd>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
-              <dt className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                <ShieldCheck size={14} /> Role
-              </dt>
-              <dd className="mt-2 text-sm font-medium text-slate-900">{facultyProfile.role}</dd>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4 sm:col-span-2">
-              <dt className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
-                <IdCard size={14} /> Employee ID
-              </dt>
-              <dd className="mt-2 text-sm font-medium text-slate-900">{facultyProfile.employeeId}</dd>
-            </div>
-          </dl>
-        </CardContent>
-      </Card>
-    </div>
+          <CardContent>
+            <motion.dl
+              className="grid gap-4 sm:grid-cols-2"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {fields.map((field) => (
+                <motion.div
+                  key={field.label}
+                  variants={cardVariants}
+                  className={`rounded-lg border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:border-red-100 hover:bg-red-50/30 ${
+                    field.span ? "sm:col-span-2" : ""
+                  }`}
+                >
+                  <dt className="flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                    {field.icon && <field.icon size={13} />}
+                    {field.label}
+                  </dt>
+                  <dd className="mt-2 text-sm font-medium text-slate-900">{field.value}</dd>
+                </motion.div>
+              ))}
+            </motion.dl>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
