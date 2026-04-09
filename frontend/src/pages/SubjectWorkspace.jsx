@@ -1,15 +1,11 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import FileUploadSection from "../components/layout/FileUploadSection";
 import ParameterSection from "../components/layout/ParameterSection";
 import ReportSection from "../components/layout/ReportSection";
-<<<<<<< HEAD
 import { pageVariants, containerVariants, sectionVariants } from "../lib/animations";
-=======
-import { useEffect, useState } from "react";
 import { getSubjects, getWorkspaceProgress, saveWorkspaceProgress } from "../lib/api";
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 const subjectCatalog = {
   CS301: { name: "Database Management Systems", semester: "Semester V" },
@@ -20,7 +16,6 @@ const subjectCatalog = {
   IT407: { name: "Cloud Computing", semester: "Semester VII" },
 };
 
-<<<<<<< HEAD
 const workflowSteps = [
   { id: 1, label: "Upload Files" },
   { id: 2, label: "Set Parameters" },
@@ -28,10 +23,7 @@ const workflowSteps = [
   { id: 4, label: "Download" },
 ];
 
-export default function SubjectWorkspace() {
-=======
 export default function SubjectWorkspace({ user }) {
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [parameters, setParameters] = useState({});
   const [step, setStep] = useState(1);
@@ -41,14 +33,15 @@ export default function SubjectWorkspace({ user }) {
     upload: true,
     parameter: false,
   });
+
   const { subjectCode } = useParams();
   const resolvedSubjectCode = subjectCode || "SUBJECT";
   const details =
     subjects.find((subject) => subject.code === resolvedSubjectCode) ||
-    subjectCatalog[subjectCode] || {
-    name: "Subject Name",
-    semester: "Semester",
-  };
+    subjectCatalog[resolvedSubjectCode] || {
+      name: "Subject Name",
+      semester: "Semester",
+    };
 
   useEffect(() => {
     async function loadSubjects() {
@@ -112,7 +105,6 @@ export default function SubjectWorkspace({ user }) {
       animate="visible"
       exit="exit"
     >
-      {/* Page header */}
       <motion.div
         className="flex flex-wrap items-center justify-between gap-3"
         variants={sectionVariants}
@@ -122,7 +114,7 @@ export default function SubjectWorkspace({ user }) {
             Subject Workspace
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-red-950">
-            {resolvedSubjectCode} — {details.name}
+            {resolvedSubjectCode} - {details.name}
           </h1>
           <p className="mt-1 text-sm font-medium text-slate-600">{details.semester}</p>
           <p className="mt-2 text-sm text-slate-600">
@@ -131,7 +123,6 @@ export default function SubjectWorkspace({ user }) {
         </div>
       </motion.div>
 
-      {/* Workflow stepper */}
       <motion.div
         className="rounded-xl border border-red-100 bg-white p-3 shadow-[0_8px_20px_-20px_rgba(127,29,29,0.65)]"
         variants={sectionVariants}
@@ -166,7 +157,7 @@ export default function SubjectWorkspace({ user }) {
                   }}
                   transition={{ duration: 0.3 }}
                 >
-                  {isCompleted ? "✓" : item.id}
+                  {isCompleted ? "?" : item.id}
                 </motion.span>
                 <span className="font-medium leading-tight">{item.label}</span>
 
@@ -183,8 +174,6 @@ export default function SubjectWorkspace({ user }) {
         </ol>
       </motion.div>
 
-<<<<<<< HEAD
-      {/* Sections */}
       <motion.div
         className="space-y-6"
         variants={containerVariants}
@@ -194,127 +183,80 @@ export default function SubjectWorkspace({ user }) {
         <FileUploadSection
           isOpen={openSections.upload}
           completed={step > 1}
+          uploadedFiles={uploadedFiles}
+          user={user}
+          subjectCode={resolvedSubjectCode}
           onToggle={() =>
-=======
-      <FileUploadSection
-        isOpen={openSections.upload}
-        completed={step > 1}
-        uploadedFiles={uploadedFiles}
-        user={user}
-        subjectCode={resolvedSubjectCode}
-        onToggle={() =>
-          setOpenSections((prev) => ({
-            ...prev,
-            upload: !prev.upload,
-          }))
-        }
-        onUploadChange={(files, backendStep) => {
-          setUploadedFiles(files);
-          let nextStep = backendStep || step;
-
-          if (Object.keys(files).length === 7) {
-            nextStep = 2;
-            setStep(2);
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
             setOpenSections((prev) => ({
               ...prev,
               upload: !prev.upload,
             }))
           }
-<<<<<<< HEAD
-          onUploadChange={(files) => {
+          onUploadChange={(files, backendStep) => {
             setUploadedFiles(files);
+            let nextStep = backendStep || step;
 
-            if (Object.keys(files).length === 7) {
+            if (Object.keys(files).length === 7 && nextStep < 2) {
+              nextStep = 2;
+            }
+
+            if (nextStep === 2) {
               setStep(2);
               setOpenSections((prev) => ({
                 ...prev,
                 upload: false,
                 parameter: true,
               }));
+            } else if (nextStep === 4) {
+              setStep(4);
+              setOpenSections((prev) => ({
+                ...prev,
+                upload: false,
+                parameter: false,
+              }));
             }
+
+            persistProgress(files, parameters, nextStep);
           }}
         />
 
         <ParameterSection
           isOpen={openSections.parameter}
           completed={step > 2}
+          initialValues={parameters}
           onToggle={() =>
             setOpenSections((prev) => ({
               ...prev,
               parameter: !prev.parameter,
             }))
           }
-          onComplete={() => {
+          onComplete={(values) => {
+            setParameters(values);
             setStep(3);
             setOpenSections((prev) => ({
               ...prev,
               parameter: false,
             }));
+            persistProgress(uploadedFiles, values, 3);
           }}
         />
 
         <ReportSection
           completed={step > 3}
+          user={user}
+          subjectCode={resolvedSubjectCode}
+          subjectName={details.name}
+          semester={details.semester}
           uploadedFiles={uploadedFiles}
           parametersCompleted={step >= 3}
-          onGenerated={() => setStep(4)}
+          onGenerated={() => {
+            setStep(4);
+            persistProgress(uploadedFiles, parameters, 4);
+          }}
         />
+
+        {saveMessage ? <p className="text-xs text-slate-500">{saveMessage}</p> : null}
       </motion.div>
     </motion.div>
-=======
-
-          if (nextStep === 4) {
-            setStep(4);
-            setOpenSections((prev) => ({
-              ...prev,
-              upload: false,
-              parameter: false,
-            }));
-            return;
-          }
-
-          persistProgress(files, parameters, nextStep);
-        }}
-      />
-
-      <ParameterSection
-        isOpen={openSections.parameter}
-        completed={step > 2}
-        initialValues={parameters}
-        onToggle={() =>
-          setOpenSections((prev) => ({
-            ...prev,
-            parameter: !prev.parameter,
-          }))
-        }
-        onComplete={(values) => {
-          setParameters(values);
-          setStep(3);
-          setOpenSections((prev) => ({
-            ...prev,
-            parameter: false,
-          }));
-          persistProgress(uploadedFiles, values, 3);
-        }}
-      />
-
-      <ReportSection
-        completed={step > 3}
-        user={user}
-        subjectCode={resolvedSubjectCode}
-        subjectName={details.name}
-        semester={details.semester}
-        uploadedFiles={uploadedFiles}
-        parametersCompleted={step >= 3}
-        onGenerated={() => {
-          setStep(4);
-          persistProgress(uploadedFiles, parameters, 4);
-        }}
-      />
-
-      {saveMessage ? <p className="text-xs text-slate-500">{saveMessage}</p> : null}
-    </div>
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   );
 }

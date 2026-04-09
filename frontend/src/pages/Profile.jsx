@@ -1,13 +1,9 @@
 import { Building2, IdCard, Mail, ShieldCheck, UserRound } from "lucide-react";
-<<<<<<< HEAD
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { pageVariants, containerVariants, cardVariants, sectionVariants } from "../lib/animations";
-=======
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { getProfile } from "../lib/api";
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 export default function Profile({ user }) {
   const [facultyProfile, setFacultyProfile] = useState({
@@ -38,18 +34,14 @@ export default function Profile({ user }) {
     loadProfile();
   }, [user?.email]);
 
-<<<<<<< HEAD
-const fields = [
-  { label: "Name", icon: null, value: facultyProfile.name, span: false },
-  { label: "Email", icon: Mail, value: facultyProfile.email, span: false },
-  { label: "Department", icon: Building2, value: facultyProfile.department, span: false },
-  { label: "Role", icon: ShieldCheck, value: facultyProfile.role, span: false },
-  { label: "Employee ID", icon: IdCard, value: facultyProfile.employeeId, span: true },
-];
+  const fields = [
+    { label: "Name", icon: null, value: facultyProfile.name, span: false },
+    { label: "Email", icon: Mail, value: facultyProfile.email, span: false },
+    { label: "Department", icon: Building2, value: facultyProfile.department, span: false },
+    { label: "Role", icon: ShieldCheck, value: facultyProfile.role, span: false },
+    { label: "Employee ID", icon: IdCard, value: facultyProfile.employeeId, span: true },
+  ];
 
-export default function Profile() {
-=======
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   return (
     <motion.div
       className="space-y-6 p-4 md:p-6"
@@ -58,7 +50,6 @@ export default function Profile() {
       animate="visible"
       exit="exit"
     >
-      {/* Header */}
       <motion.div variants={sectionVariants}>
         <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
           <CardHeader className="pb-4">
@@ -70,7 +61,6 @@ export default function Profile() {
         </Card>
       </motion.div>
 
-      {/* Profile card */}
       <motion.div variants={cardVariants}>
         <Card className="mx-auto w-full max-w-4xl border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
           <CardHeader className="pb-5">

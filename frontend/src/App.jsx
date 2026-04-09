@@ -1,11 +1,7 @@
-<<<<<<< HEAD
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-=======
-import { useEffect, useState } from "react";
-import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
+import { useEffect } from "react";
 import { Navbar } from "./components/layout/Navbar";
 import { Sidebar } from "./components/layout/Sidebar";
 import Dashboard from "./pages/Dashboard";

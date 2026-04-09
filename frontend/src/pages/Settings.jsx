@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -16,16 +15,13 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-<<<<<<< HEAD
 import {
   pageVariants,
   containerVariants,
   cardVariants,
   sectionVariants,
 } from "../lib/animations";
-=======
 import { getProfile, updatePassword } from "../lib/api";
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 export default function Settings({ user }) {
   const navigate = useNavigate();
@@ -113,7 +109,6 @@ export default function Settings({ user }) {
       animate="visible"
       exit="exit"
     >
-      {/* Header */}
       <motion.div variants={sectionVariants}>
         <Card className="border-red-100/80 shadow-[0_18px_45px_-35px_rgba(127,29,29,0.45)]">
           <CardHeader className="pb-4">
@@ -132,7 +127,6 @@ export default function Settings({ user }) {
         initial="hidden"
         animate="visible"
       >
-        {/* Profile information */}
         <motion.div variants={cardVariants}>
           <Card className="border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
             <CardHeader className="pb-5">
@@ -165,7 +159,6 @@ export default function Settings({ user }) {
           </Card>
         </motion.div>
 
-        {/* Change password */}
         <motion.div variants={cardVariants}>
           <Card className="border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
             <CardHeader className="pb-5">
@@ -246,7 +239,6 @@ export default function Settings({ user }) {
           </Card>
         </motion.div>
 
-        {/* Account actions */}
         <motion.div variants={cardVariants}>
           <Card className="border-red-100/80 shadow-[0_18px_35px_-30px_rgba(30,41,59,0.35)]">
             <CardHeader className="pb-5">
@@ -273,7 +265,6 @@ export default function Settings({ user }) {
         </motion.div>
       </motion.div>
 
-      {/* Tip */}
       <motion.div variants={sectionVariants} className="mx-auto w-full max-w-4xl">
         <Card className="border-red-100/80 bg-red-50/50">
           <CardContent className="pt-6">

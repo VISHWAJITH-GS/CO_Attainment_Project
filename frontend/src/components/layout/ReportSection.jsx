@@ -1,14 +1,10 @@
-import { FileSpreadsheet, Loader2, CheckCircle2, Download } from "lucide-react";
+import { FileSpreadsheet, Loader2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-<<<<<<< HEAD
 import { cardVariants } from "../../lib/animations";
-=======
-import { useState } from "react";
 import { downloadReportFile, generateReport } from "../../lib/api";
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
 export default function ReportSection({
   completed,
@@ -21,39 +17,26 @@ export default function ReportSection({
   semester,
 }) {
   const requiredFiles = 7;
-<<<<<<< HEAD
-  const [generating, setGenerating] = useState(false);
-  const [generated, setGenerated] = useState(false);
-=======
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generated, setGenerated] = useState(false);
   const [message, setMessage] = useState("");
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
   const uploadedCount = Object.keys(uploadedFiles || {}).length;
   const allUploaded = uploadedCount === requiredFiles;
-  const canGenerate = allUploaded && parametersCompleted && !generated;
+  const canGenerate = allUploaded && parametersCompleted && !isGenerating && !generated;
 
   const statusMessage = generated
-    ? "Report generated successfully! You can now download the output."
+    ? "Report generated successfully and downloaded."
     : canGenerate
     ? "Upload and parameter steps are complete. You can generate the report."
     : !allUploaded
     ? `Upload all files to enable report generation (${uploadedCount}/7 uploaded)`
     : "Complete the parameter section to enable report generation.";
 
-<<<<<<< HEAD
-  const handleGenerate = () => {
-    if (!canGenerate) return;
-    setGenerating(true);
-
-    setTimeout(() => {
-      setGenerating(false);
-      setGenerated(true);
-      onGenerated?.();
-    }, 1800);
-  };
-=======
   async function handleGenerate() {
+    if (!canGenerate) {
+      return;
+    }
     if (!user?.email || !subjectCode) {
       setMessage("Please log in again.");
       return;
@@ -79,6 +62,7 @@ export default function ReportSection({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      setGenerated(true);
       setMessage("Report generated and downloaded.");
       onGenerated?.();
     } catch (error) {
@@ -87,7 +71,6 @@ export default function ReportSection({
       setIsGenerating(false);
     }
   }
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
 
   return (
     <motion.div variants={cardVariants}>
@@ -114,7 +97,6 @@ export default function ReportSection({
         </CardHeader>
 
         <CardContent className="space-y-5">
-          {/* Status message */}
           <AnimatePresence mode="wait">
             <motion.p
               key={statusMessage}
@@ -130,9 +112,8 @@ export default function ReportSection({
             </motion.p>
           </AnimatePresence>
 
-          {/* Generating progress */}
           <AnimatePresence>
-            {generating && (
+            {isGenerating && (
               <motion.div
                 className="space-y-2"
                 initial={{ opacity: 0, height: 0 }}
@@ -141,7 +122,7 @@ export default function ReportSection({
               >
                 <div className="flex items-center gap-2 text-sm text-slate-600">
                   <Loader2 size={14} className="spinner text-red-700" />
-                  Processing files and computing CO attainment…
+                  Processing files and computing CO attainment...
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <motion.div
@@ -155,7 +136,6 @@ export default function ReportSection({
             )}
           </AnimatePresence>
 
-          {/* Action area */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-slate-700">
@@ -166,63 +146,32 @@ export default function ReportSection({
               </p>
             </div>
 
-            <div className="flex gap-3">
-              <motion.div whileTap={canGenerate && !generating ? { scale: 0.97 } : {}}>
-                <Button
-                  className="btn-press min-w-[200px]"
-                  onClick={handleGenerate}
-                  disabled={!canGenerate || generating}
-                >
-                  {generating ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={14} className="spinner" />
-                      Generating…
-                    </span>
-                  ) : generated ? (
-                    <span className="flex items-center gap-2">
-                      <CheckCircle2 size={14} />
-                      Report Generated
-                    </span>
-                  ) : (
-                    "Generate Report"
-                  )}
-                </Button>
-              </motion.div>
-
-<<<<<<< HEAD
-              <AnimatePresence>
-                {generated && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.85 }}
-                    transition={{ type: "spring", stiffness: 280, damping: 20 }}
-                  >
-                    <Button variant="ghost" className="btn-press border border-red-200 hover:bg-red-50">
-                      <Download size={15} className="mr-1.5" />
-                      Download
-                    </Button>
-                  </motion.div>
+            <motion.div whileTap={canGenerate ? { scale: 0.97 } : {}}>
+              <Button
+                className="btn-press min-w-[200px]"
+                onClick={handleGenerate}
+                disabled={!canGenerate}
+              >
+                {isGenerating ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 size={14} className="spinner" />
+                    Generating...
+                  </span>
+                ) : generated ? (
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 size={14} />
+                    Report Generated
+                  </span>
+                ) : (
+                  "Generate Report"
                 )}
-              </AnimatePresence>
-            </div>
+              </Button>
+            </motion.div>
           </div>
+
+          {message ? <p className="text-xs text-slate-600">{message}</p> : null}
         </CardContent>
       </Card>
     </motion.div>
-=======
-          <Button
-            className="min-w-[200px]"
-            onClick={handleGenerate}
-            disabled={!canGenerate || isGenerating}
-          >
-            {isGenerating ? "Generating..." : "Generate Report"}
-          </Button>
-
-        </div>
-        {message ? <p className="w-full text-xs text-slate-600">{message}</p> : null}
-      </CardContent>
-    </Card>
->>>>>>> bba6283fd97fa492d7caf0417155ff43572a8dcb
   );
 }
